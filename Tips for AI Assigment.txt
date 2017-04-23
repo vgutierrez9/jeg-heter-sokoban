@@ -1,0 +1,5 @@
+Split taboo cells method into two methods:
+One that finds the coordinates of taboo cells and returns a list of coordinates
+One that prints them as a string
+
+It would be helpful for actions method to be able to reference which cells are taboo
