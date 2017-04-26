@@ -13,7 +13,7 @@ import search
 import itertools
 from itertools import product
 import sokoban
-
+import math
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -78,7 +78,7 @@ def taboo_coordinates(warehouse):
     @param warehouse: a Warehouse object
 
     @return
-       A list containing the coordinates for all the taboo cella
+       A list containing the coordinates for all the taboo cell
     '''
     # Get map dimensions
     X,Y = zip(*warehouse.walls)
@@ -257,7 +257,7 @@ class SokobanPuzzle(search.Problem):
     def __init__(self, warehouse):
 
         self.wh = warehouse
-        self.initial_state = ((warehouse.worker),) + warehouse.boxes
+        self.initial_state = ((warehouse.worker),) + tuple(warehouse.boxes)
         
     #DONE
     def actions(self, state):
@@ -278,42 +278,42 @@ class SokobanPuzzle(search.Problem):
         
         #if no wall or box on the right, add it to action list
         if cell_to_right not in self.wh.walls and cell_to_right not in state:
-            OK_actions += "Right"
+            OK_actions += ("Right",)
         #if box on right, check it out
         elif cell_to_right in state:
             #what's on box's right?
             box_right = cell_in_direction(cell_to_right, "Right")
             #if box's right is good, add right to action list
             if box_right not in taboo_cells(state) and box_right not in self.wh.walls and box_right not in state:
-                OK_actions += "Right"
+                OK_actions += ("Right",)
         
         #if no wall or box on the left, add it to action list
         if cell_to_left not in self.wh.walls and cell_to_left not in state:
-            OK_actions += "Left"
+            OK_actions += ("Left",)
         #if box on left, check it out
         elif cell_to_left in state:
             #what's on box's left?
             box_left = cell_in_direction(cell_to_right, "Left")
             #if box's left is good, add left to action list
             if box_left not in taboo_cells(state) and box_left not in self.wh.walls and box_left not in state:
-                OK_actions += "Left"
+                OK_actions += ("Left",)
         
         #exact same thing as above, but for up and down directions
         if cell_up not in self.wh.walls and cell_up not in state:
-            OK_actions += "Up"
+            OK_actions += ("Up",)
         elif cell_up in state:
             box_up = cell_in_direction(cell_up, "Up")
             if box_up not in taboo_cells(state) and box_up not in self.wh.walls and box_up not in state:
-                OK_actions += "Up"
+                OK_actions += ("Up",)
 
         if cell_down not in self.wh.walls and cell_down not in state:
-            OK_actions += "Down"
+            OK_actions += ("Down",)
         elif cell_down in state:
             box_down = cell_in_direction(cell_down, "Down")
             if box_down not in taboo_cells(state) and box_down not in self.wh.walls and box_down not in state:
-                OK_actions += "Down"   
+                OK_actions += ("Down",)   
 				
-            return OK_actions
+        return OK_actions
 	
     #DONE
     def legal_actions(self, state):
@@ -325,7 +325,7 @@ class SokobanPuzzle(search.Problem):
         The actions must belong to the list ['Left', 'Down', 'Right', 'Up']        
         """
         
-        OK_actions = []
+        OK_actions = ()
         
         #what is to the (direction), is it a wall or a box?
         cell_to_right = cell_in_direction(state[0], "Right")
@@ -335,46 +335,47 @@ class SokobanPuzzle(search.Problem):
         
         #if no wall or box on the right, add it to action list
         if cell_to_right not in self.wh.walls and cell_to_right not in state:
-            OK_actions += "Right"
+            OK_actions += ("Right",)
         #if box on right, check it out
         elif cell_to_right in state:
             #what's on box's right?
             box_right = cell_in_direction(cell_to_right, "Right")
             #if box's right is good, add right to action list
             if box_right not in self.wh.walls and box_right not in state:
-                OK_actions += "Right"
+                OK_actions += ("Right")
         
         #if no wall or box on the left, add it to action list
         if cell_to_left not in self.wh.walls and cell_to_left not in state:
-            OK_actions += "Left"
+            OK_actions += ("Left",)
         #if box on left, check it out
         elif cell_to_left in state:
             #what's on box's left?
             box_left = cell_in_direction(cell_to_right, "Left")
             #if box's left is good, add left to action list
             if box_left not in self.wh.walls and box_left not in state:
-                OK_actions += "Left"
+                OK_actions += ("Left",)
         
         #exact same thing as above, but for up and down directions
         if cell_up not in self.wh.walls and cell_up not in state:
-            OK_actions += "Up"
+            OK_actions += ("Up",)
         elif cell_up in state:
             box_up = cell_in_direction(cell_up, "Up")
             if box_up not in self.wh.walls and box_up not in state:
-                OK_actions += "Up"
+                OK_actions += ("Up",)
 
         if cell_down not in self.wh.walls and cell_down not in state:
-            OK_actions += "Down"
+            OK_actions += ("Down",)
         elif cell_down in state:
             box_down = cell_in_direction(cell_down, "Down")
             if box_down not in self.wh.walls and box_down not in state:
-                OK_actions += "Down"   
-            return OK_actions
+                OK_actions += ("Down",)   
+                
+        return OK_actions
     
 	#DONE
     def result(self, state, action):
         """Return the state that results from executing the given action in the given state. The action must be one of self.actions(state)."""
-        assert action in actions(self, state)
+        #assert action in self.actions(state)
 		
         if cell_in_direction(state[0], action) in state:
             i = 0
@@ -396,8 +397,8 @@ class SokobanPuzzle(search.Problem):
 #		#Do we need to sort boxes and targets first?
 #        if (set(state) & set(self.wh.targets)) == len(state):
 #            return True
-        else:
-            return False
+  #      else:
+   #         return False
         
     def path_cost(self, c, state1, action, state2):
         """Return the cost of a solution path that arrives at state2 from
@@ -420,13 +421,13 @@ class SokobanPuzzle(search.Problem):
         value = 0
         first = True
         dist = 0
-		
+        boxes = state[1:]
 		#get each box, one at a time
         for box in boxes:
 			#separate the box's x, y coordinates
             box_x, box_y = zip(*box)
 			#get each target one at a time and find the distance to the target that is closest to the box
-            for target in targets:
+            for target in self.wh.targets:
 				#separate the target's x,y coordinates
                 target_x, target_y = zip(*target)
 				#find the diagonal distance (via hypotenus)
@@ -468,24 +469,46 @@ def check_action_seq(warehouse, action_seq):
                the sequence of actions.  This must be the same string as the
                string returned by the method  Warehouse.__str__()
     '''
-    temp_wh = warehouse
+
+    skp = SokobanPuzzle(warehouse)
+    temp_state = skp.initial_state
     for direction in action_seq:
-        if direction in SokobanPuzzle.legal_actions(self, temp_wh):
-            temp_wh = results(self, temp_wh, direction)
+        if direction in skp.legal_actions(temp_state):
+            temp_state = skp.result(temp_state, direction)
         else:
             return "Failure"
 	
-    return temp_wh.__str__(self)
+    return skp.__str__()
 	
 def check_taboo_action_seq(warehouse, action_seq):
+    '''
+    
+    Determine if the sequence of actions listed in 'action_seq' is legal-NO TABOO or not.
+        
+    @param warehouse: a valid Warehouse object
 
-	for direction in action_seq:
-		
-		if direction not in actions(self, warehouse):
-			return "Failure"
-		#call results(direction)
-		#update the builder location for next action in sequence
-	return "Valid"
+    @param action_seq: a sequence of legal actions.
+           For example, ['Left', 'Down', Down','Right', 'Up', 'Down']
+           
+    @return
+        The string 'Failure', if one of the action was not successul.
+           For example, if the agent tries to push two boxes at the same time,
+                        or push one box into a wall, OR PUSH A BOX INTO A TABOO SPOT.
+        Otherwise, if all actions were successful, return                 
+               A string representing the state of the puzzle after applying
+               the sequence of actions.  This must be the same string as the
+               string returned by the method  Warehouse.__str__()
+    '''
+    skp = SokobanPuzzle(warehouse)
+    temp_state = skp.initial_state
+    for direction in action_seq:
+        if direction in skp.actions(temp_state):
+            temp_state = skp.result(temp_state, direction)
+        else:
+            return "Failure"
+	
+    return skp.__str__()
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 def solve_sokoban_elem(warehouse):
