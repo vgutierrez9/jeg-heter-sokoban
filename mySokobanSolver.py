@@ -255,9 +255,10 @@ class SokobanPuzzle(search.Problem):
     '''
     #DONE
     def __init__(self, warehouse):
-        """Set the initial state of the problem to the warehouse passed."""
+
         self.wh = warehouse
-        self.initial = 
+        self.initial_state = ((warehouse.worker),) + warehouse.boxes
+        
     #DONE
     def actions(self, state):
         """
@@ -270,46 +271,46 @@ class SokobanPuzzle(search.Problem):
         OK_actions = []
         
         #what is to the (direction), is it a wall or a box?
-        cell_to_right = cell_in_direction(state.worker, "Right")
-        cell_to_left = cell_in_direction(state.worker, "Left")
-        cell_up = cell_in_direction(state.worker, "Up")
-        cell_down = cell_in_direction(state.worker, "Down")
+        cell_to_right = cell_in_direction(state[0], "Right")
+        cell_to_left = cell_in_direction(state[0], "Left")
+        cell_up = cell_in_direction(state[0], "Up")
+        cell_down = cell_in_direction(state[0], "Down")
         
         #if no wall or box on the right, add it to action list
-        if cell_to_right not in state.walls and cell_to_right not in state.boxes:
+        if cell_to_right not in self.wh.walls and cell_to_right not in state:
             OK_actions += "Right"
         #if box on right, check it out
-        elif cell_to_right in state.boxes:
+        elif cell_to_right in state:
             #what's on box's right?
             box_right = cell_in_direction(cell_to_right, "Right")
             #if box's right is good, add right to action list
-            if box_right not in taboo_cells(state) and box_right not in state.walls and box_right not in state.boxes:
+            if box_right not in taboo_cells(state) and box_right not in self.wh.walls and box_right not in state:
                 OK_actions += "Right"
         
         #if no wall or box on the left, add it to action list
-        if cell_to_left not in state.walls and cell_to_left not in state.boxes:
+        if cell_to_left not in self.wh.walls and cell_to_left not in state:
             OK_actions += "Left"
         #if box on left, check it out
-        elif cell_to_left in state.boxes:
+        elif cell_to_left in state:
             #what's on box's left?
             box_left = cell_in_direction(cell_to_right, "Left")
             #if box's left is good, add left to action list
-            if box_left not in taboo_cells(state) and box_left not in state.walls and box_left not in state.boxes:
+            if box_left not in taboo_cells(state) and box_left not in self.wh.walls and box_left not in state:
                 OK_actions += "Left"
         
         #exact same thing as above, but for up and down directions
-        if cell_up not in state.walls and cell_up not in state.boxes:
+        if cell_up not in self.wh.walls and cell_up not in state:
             OK_actions += "Up"
-        elif cell_up in state.boxes:
+        elif cell_up in state:
             box_up = cell_in_direction(cell_up, "Up")
-            if box_up not in taboo_cells(state) and box_up not in state.walls and box_up not in state.boxes:
+            if box_up not in taboo_cells(state) and box_up not in self.wh.walls and box_up not in state:
                 OK_actions += "Up"
 
-        if cell_down not in state.walls and cell_down not in state.boxes:
+        if cell_down not in self.wh.walls and cell_down not in state:
             OK_actions += "Down"
-        elif cell_down in state.boxes:
+        elif cell_down in state:
             box_down = cell_in_direction(cell_down, "Down")
-            if box_down not in taboo_cells(state) and box_down not in state.walls and box_down not in state.boxes:
+            if box_down not in taboo_cells(state) and box_down not in self.wh.walls and box_down not in state:
                 OK_actions += "Down"   
 				
             return OK_actions
@@ -327,46 +328,46 @@ class SokobanPuzzle(search.Problem):
         OK_actions = []
         
         #what is to the (direction), is it a wall or a box?
-        cell_to_right = cell_in_direction(state.worker, "Right")
-        cell_to_left = cell_in_direction(state.worker, "Left")
-        cell_up = cell_in_direction(state.worker, "Up")
-        cell_down = cell_in_direction(state.worker, "Down")
+        cell_to_right = cell_in_direction(state[0], "Right")
+        cell_to_left = cell_in_direction(state[0], "Left")
+        cell_up = cell_in_direction(state[0], "Up")
+        cell_down = cell_in_direction(state[0], "Down")
         
         #if no wall or box on the right, add it to action list
-        if cell_to_right not in state.walls and cell_to_right not in state.boxes:
+        if cell_to_right not in self.wh.walls and cell_to_right not in state:
             OK_actions += "Right"
         #if box on right, check it out
-        elif cell_to_right in state.boxes:
+        elif cell_to_right in state:
             #what's on box's right?
             box_right = cell_in_direction(cell_to_right, "Right")
             #if box's right is good, add right to action list
-            if box_right not in state.walls and box_right not in state.boxes:
+            if box_right not in self.wh.walls and box_right not in state:
                 OK_actions += "Right"
         
         #if no wall or box on the left, add it to action list
-        if cell_to_left not in state.walls and cell_to_left not in state.boxes:
+        if cell_to_left not in self.wh.walls and cell_to_left not in state:
             OK_actions += "Left"
         #if box on left, check it out
-        elif cell_to_left in state.boxes:
+        elif cell_to_left in state:
             #what's on box's left?
             box_left = cell_in_direction(cell_to_right, "Left")
             #if box's left is good, add left to action list
-            if box_left not in state.walls and box_left not in state.boxes:
+            if box_left not in self.wh.walls and box_left not in state:
                 OK_actions += "Left"
         
         #exact same thing as above, but for up and down directions
-        if cell_up not in state.walls and cell_up not in state.boxes:
+        if cell_up not in self.wh.walls and cell_up not in state:
             OK_actions += "Up"
-        elif cell_up in state.boxes:
+        elif cell_up in state:
             box_up = cell_in_direction(cell_up, "Up")
-            if box_up not in state.walls and box_up not in state.boxes:
+            if box_up not in self.wh.walls and box_up not in state:
                 OK_actions += "Up"
 
-        if cell_down not in state.walls and cell_down not in state.boxes:
+        if cell_down not in self.wh.walls and cell_down not in state:
             OK_actions += "Down"
-        elif cell_down in state.boxes:
+        elif cell_down in state:
             box_down = cell_in_direction(cell_down, "Down")
-            if box_down not in state.walls and box_down not in state.boxes:
+            if box_down not in self.wh.walls and box_down not in state:
                 OK_actions += "Down"   
             return OK_actions
     
@@ -375,15 +376,15 @@ class SokobanPuzzle(search.Problem):
         """Return the state that results from executing the given action in the given state. The action must be one of self.actions(state)."""
         assert action in actions(self, state)
 		
-        if cell_in_direction(state.worker, action) in state.boxes:
+        if cell_in_direction(state[0], action) in state:
             i = 0
-            for box in state.boxes:
-                if cell_in_direction(state.worker, action) == box:
-                    state.boxes[i] = cell_in_direction(box, action)
+            for box in state:
+                if cell_in_direction(state[0], action) == box:
+                    state[i] = cell_in_direction(box, action)
                     i+=1
-                    new_state = state.copy(self, cell_in_direction(state.worker, action), state.boxes)
+                    new_state = state.copy(self, cell_in_direction(state[0], action), state)
         else:
-            new_state = state.copy(self, cell_in_direction(state.worker, action))
+            new_state = state.copy(self, cell_in_direction(state[0], action))
 			
         return new_state
     
@@ -392,9 +393,9 @@ class SokobanPuzzle(search.Problem):
         """Return True if the state is a goal. The default method compares the
         state to self.goal, as specified in the constructor. Override this
         method if checking against a single self.goal is not enough."""
-		#Do we need to sort boxes and targets first?
-        if (set(state.boxes) & set(state.targets)) == len(state.boxes):
-            return True
+#		#Do we need to sort boxes and targets first?
+#        if (set(state) & set(self.wh.targets)) == len(state):
+#            return True
         else:
             return False
         
@@ -414,7 +415,7 @@ class SokobanPuzzle(search.Problem):
 		diagonal distances of each box to its closest target."""
 		
 		# There must be an equal number of targets and boxes
-        assert(len(state.boxes) == len(state.targets))
+        assert(len(state) == len(state.targets))
 		
         value = 0
         first = True
@@ -551,4 +552,5 @@ def solve_sokoban_macro(warehouse):
     raise NotImplementedError()
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 
