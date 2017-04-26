@@ -256,8 +256,8 @@ class SokobanPuzzle(search.Problem):
     #DONE
     def __init__(self, warehouse):
         """Set the initial state of the problem to the warehouse passed."""
-        self.initial = warehouse
-
+        self.wh = warehouse
+        self.initial = 
     #DONE
     def actions(self, state):
         """
@@ -312,9 +312,9 @@ class SokobanPuzzle(search.Problem):
             if box_down not in taboo_cells(state) and box_down not in state.walls and box_down not in state.boxes:
                 OK_actions += "Down"   
 				
-	return OK_actions
+            return OK_actions
 	
-   #DONE
+    #DONE
     def legal_actions(self, state):
         """
         Return the list of actions that can be executed in the given state 
@@ -368,27 +368,24 @@ class SokobanPuzzle(search.Problem):
             box_down = cell_in_direction(cell_down, "Down")
             if box_down not in state.walls and box_down not in state.boxes:
                 OK_actions += "Down"   
-				
-	return OK_actions
+            return OK_actions
     
 	#DONE
     def result(self, state, action):
-        """Return the state that results from executing the given
-        action in the given state. The action must be one of
-        self.actions(state)."""
-		assert action in actions(self, state)
+        """Return the state that results from executing the given action in the given state. The action must be one of self.actions(state)."""
+        assert action in actions(self, state)
 		
-		if cell_in_direction(state.worker, action) in state.boxes:
-			i = 0
-			for box in state.boxes:
-				if cell_in_direction(state.worker, action) == box:
-					state.boxes[i] = cell_in_direction(box, action)
-				i+=1
-				new_state = state.copy(self, cell_in_direction(state.worker, action), state.boxes)
-		else:
-			new_state = state.copy(self, cell_in_direction(state.worker, action))
+        if cell_in_direction(state.worker, action) in state.boxes:
+            i = 0
+            for box in state.boxes:
+                if cell_in_direction(state.worker, action) == box:
+                    state.boxes[i] = cell_in_direction(box, action)
+                    i+=1
+                    new_state = state.copy(self, cell_in_direction(state.worker, action), state.boxes)
+        else:
+            new_state = state.copy(self, cell_in_direction(state.worker, action))
 			
-		return new_state
+        return new_state
     
     #DONE
     def goal_test(self, state):
@@ -417,33 +414,33 @@ class SokobanPuzzle(search.Problem):
 		diagonal distances of each box to its closest target."""
 		
 		# There must be an equal number of targets and boxes
-		assert(len(state.boxes) == len(state.targets))
+        assert(len(state.boxes) == len(state.targets))
 		
-		value = 0
-		first = True
-		dist = 0
+        value = 0
+        first = True
+        dist = 0
 		
 		#get each box, one at a time
-		for box in boxes:
+        for box in boxes:
 			#separate the box's x, y coordinates
-			box_x, box_y = zip(*box)
+            box_x, box_y = zip(*box)
 			#get each target one at a time and find the distance to the target that is closest to the box
-			for target in targets:
+            for target in targets:
 				#separate the target's x,y coordinates
-				target_x, target_y = zip(*target)
+                target_x, target_y = zip(*target)
 				#find the diagonal distance (via hypotenus)
-				dist = math.sqrt((box_x - target_x)**2 + (box_y - target_y)**2 )
+                dist = math.sqrt((box_x - target_x)**2 + (box_y - target_y)**2 )
 				#if first target, save that distance as minimum distance
-				if first:
-					min_dist = dist
-					first = False
+                if first:
+                    min_dist = dist
+                    first = False
 				#Save distance as minimum distance if it is less than the existing minimum distance
-				elif dist < min_dist:
-					min_dist = dist
+                elif dist < min_dist:
+                    min_dist = dist
 			#add the minimum distance for each box to value
-			value += min_dist
-		
-		return value
+            value += min_dist
+	
+        return value
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -471,11 +468,11 @@ def check_action_seq(warehouse, action_seq):
                string returned by the method  Warehouse.__str__()
     '''
     temp_wh = warehouse
-	for direction in action_seq:
-		if cell_in_direction(temp_wh.worker, direction) in legal_actions(self, temp_wh):
-			temp_wh = results(self, temp_wh, direction)
-		else:
-			return "Failure"
+    for direction in action_seq:
+        if direction in SokobanPuzzle.legal_actions(self, temp_wh):
+            temp_wh = results(self, temp_wh, direction)
+        else:
+            return "Failure"
 	
     return temp_wh.__str__(self)
 	
@@ -483,7 +480,7 @@ def check_taboo_action_seq(warehouse, action_seq):
 
 	for direction in action_seq:
 		
-		if direction not in actions(self, warehouse)
+		if direction not in actions(self, warehouse):
 			return "Failure"
 		#call results(direction)
 		#update the builder location for next action in sequence
