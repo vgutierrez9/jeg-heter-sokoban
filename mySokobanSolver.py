@@ -25,8 +25,7 @@ def my_team():
     of triplet of the form (student_number, first_name, last_name)
     
     '''
-#    return [ (9890394, 'Vanessa', 'Gutierrez'), (9884050, 'Glenn', 'Christensen'), (9884076, 'Marius', 'Imingen') ]
-    raise NotImplementedError()
+    return [ (9890394, 'Vanessa', 'Gutierrez'), (9884050, 'Glenn', 'Christensen'), (9884076, 'Marius', 'Imingen') ]
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -265,7 +264,8 @@ class SokobanPuzzle(search.Problem):
         Return the list of actions that can be executed in the given state 
         if these actions put the builder into an empty space and
 		do not push a box in a taboo cell, a wall, or into another box.
-        The actions must belong to the list ['Left', 'Down', 'Right', 'Up']        
+        The actions must belong to the list ['Left', 'Down', 'Right', 'Up']   
+        NO TABOO!!!!!!!!!!!!!!     
         """
         
         OK_actions = []
@@ -376,20 +376,33 @@ class SokobanPuzzle(search.Problem):
     def result(self, state, action):
         """Return the state that results from executing the given action in the given state. The action must be one of self.actions(state)."""
         #assert action in self.actions(state)
-		
-        if cell_in_direction(state[0], action) in state:
-            i = 0
-            for box in state:
+		#is the cell builder moving to a box?
+        new_state = state
+        if cell_in_direction(state[0], action) in state[1:]:
+            i = 1
+            #find which box 
+            for box in state[1:]:
+                #if we find the box that builder is moving to
                 if cell_in_direction(state[0], action) == box:
-                    state[i] = cell_in_direction(box, action)
-                    i+=1
-                    new_state = state.copy(self, cell_in_direction(state[0], action), state)
+                    #move the box one space in the direction
+                    new_state_list = list(new_state)
+                    new_state_list[i] = cell_in_direction(box, action)
+                    new_state = tuple(new_state_list)
+                    break
+                i+=1
+
+            new_state_list = list(new_state)
+            new_state_list[0] = cell_in_direction(state[0], action)
+            new_state = tuple(new_state_list)
+            
         else:
-            new_state = state.copy(self, cell_in_direction(state[0], action))
-			
+            new_state_list = list(new_state)
+            new_state_list[0] = cell_in_direction(state[0], action)
+            new_state = tuple(new_state_list)
+ 
         return new_state
     
-    #DONE
+    
     def goal_test(self, state):
         """Return True if the state is a goal. The default method compares the
         state to self.goal, as specified in the constructor. Override this
@@ -445,10 +458,10 @@ class SokobanPuzzle(search.Problem):
         return value
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
+#DONE
 def check_action_seq(warehouse, action_seq):
     '''
-    
+    Check if action sequence is french legal
     Determine if the sequence of actions listed in 'action_seq' is legal or not.
     
     Important notes:
@@ -477,12 +490,16 @@ def check_action_seq(warehouse, action_seq):
             temp_state = skp.result(temp_state, direction)
         else:
             return "Failure"
-	
-    return skp.__str__()
-	
-def check_taboo_action_seq(warehouse, action_seq):
+
+    skp.wh.worker = temp_state[0]
+    skp.wh.boxes = temp_state[1:]
+
+    return skp.wh.__str__()
+
+#DONE
+def check_no_taboo_action_seq(warehouse, action_seq):
     '''
-    
+    Check if action sequence is norwegian legal
     Determine if the sequence of actions listed in 'action_seq' is legal-NO TABOO or not.
         
     @param warehouse: a valid Warehouse object
@@ -506,8 +523,11 @@ def check_taboo_action_seq(warehouse, action_seq):
             temp_state = skp.result(temp_state, direction)
         else:
             return "Failure"
-	
-    return skp.__str__()
+
+    skp.wh.worker = temp_state[0]
+    skp.wh.boxes = temp_state[1:]
+
+    return skp.wh.__str__()
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

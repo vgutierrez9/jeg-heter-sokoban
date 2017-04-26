@@ -96,6 +96,7 @@ def test_warehouse_2():
     print(wh)
     print(wh.worker) # x,y  coords !!
     print(wh.walls)  # x,y  coords !!
+
     
 def test_taboo_cells():
     wh = Warehouse()
@@ -121,8 +122,13 @@ def test_check_elem_action_seq():
     wh.read_warehouse_file(problem_file)
     print('Initial state \n', wh ,'\n')
     answer = check_action_seq(wh, ['Right', 'Right','Down'])
+    # answer = check_action_seq(wh, ['Up', 'Up', 'Left'])
     
-    if same_multi_line_strings(answer,expected_answer_1):
+    print("Answer:")
+    print(answer)
+    print("Expected Answer:")
+    print(expected_answer_1)
+    if same_multi_line_strings(answer, expected_answer_1):
         print('Test check_elem_action_seq passed\n')
     else:
         print('** Test check_elem_action_seq failed\n')
@@ -182,10 +188,10 @@ if __name__ == "__main__":
 #    test_warehouse_1() # test Warehouse
 #    test_warehouse_2() # test Warehouse
     
-#    print(my_team())  # should print your team
+    print(my_team())  # should print your team
 
 #   test_taboo_cells() 
-    test_check_elem_action_seq()
+#    test_check_elem_action_seq()
 #    test_solve_sokoban_elem()
 #    test_can_go_there()
 #    test_solve_sokoban_macro()   
