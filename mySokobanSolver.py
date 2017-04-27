@@ -1,11 +1,11 @@
 
 '''
 
-The partially defined functions and classes of this module 
-will be called by a marker script. 
+The partially defined functions and classes of this module
+will be called by a marker script.
 
 You should complete the functions and classes according to their specified interfaces.
- 
+
 
 '''
 
@@ -23,7 +23,7 @@ def my_team():
     '''
     Return the list of the team members of this assignment submission as a list
     of triplet of the form (student_number, first_name, last_name)
-    
+
     '''
     return [ (9890394, 'Vanessa', 'Gutierrez'), (9884050, 'Glenn', 'Christensen'), (9884076, 'Marius', 'Imingen') ]
 
@@ -31,29 +31,29 @@ def my_team():
 
 #DONE
 def taboo_cells(warehouse):
-    '''  
-    Identify the taboo cells of a warehouse. A cell is called 'taboo' 
-    if whenever a box get pushed on such a cell then the puzzle becomes unsolvable.  
-    When determining the taboo cells, you must ignore all the existing boxes, 
-    simply consider the walls and the target  cells.  
+    '''
+    Identify the taboo cells of a warehouse. A cell is called 'taboo'
+    if whenever a box get pushed on such a cell then the puzzle becomes unsolvable.
+    When determining the taboo cells, you must ignore all the existing boxes,
+    simply consider the walls and the target  cells.
     Use only the following two rules to determine the taboo cells;
      Rule 1: if a cell is a corner and not a target, then it is a taboo cell.
-     Rule 2: all the cells between two corners along a wall are taboo if none of 
+     Rule 2: all the cells between two corners along a wall are taboo if none of
              these cells is a target.
-    
+
     @param warehouse: a Warehouse object
 
     @return
-       A string representing the puzzle with only the wall cells marked with 
-       an '#' and the taboo cells marked with an 'X'.  
+       A string representing the puzzle with only the wall cells marked with
+       an '#' and the taboo cells marked with an 'X'.
        The returned string should NOT have marks for the worker, the targets,
-       and the boxes.  
+       and the boxes.
     '''
     coordinate_list = taboo_coordinates(warehouse)
-    
+
     X,Y = zip(*warehouse.walls) # pythonic version of the above
     x_size, y_size = 1+max(X), 1+max(Y)
-        
+
     vis = [[" "] * x_size for y in range(y_size)]
     for (x,y) in warehouse.walls:
         vis[y][x] = "#"
@@ -64,16 +64,16 @@ def taboo_cells(warehouse):
 
 #DONE
 def taboo_coordinates(warehouse):
-    '''  
-    Identify the coordinates of the taboo cells of a warehouse. A cell is called 'taboo' 
-    if whenever a box get pushed on such a cell then the puzzle becomes unsolvable.  
-    When determining the taboo cells, you must ignore all the existing boxes, 
-    simply consider the walls and the target  cells.  
+    '''
+    Identify the coordinates of the taboo cells of a warehouse. A cell is called 'taboo'
+    if whenever a box get pushed on such a cell then the puzzle becomes unsolvable.
+    When determining the taboo cells, you must ignore all the existing boxes,
+    simply consider the walls and the target  cells.
     Use only the following two rules to determine the taboo cells;
      Rule 1: if a cell is a corner and not a target, then it is a taboo cell.
-     Rule 2: all the cells between two corners along a wall are taboo if none of 
+     Rule 2: all the cells between two corners along a wall are taboo if none of
              these cells is a target.
-    
+
     @param warehouse: a Warehouse object
 
     @return
@@ -82,10 +82,10 @@ def taboo_coordinates(warehouse):
     # Get map dimensions
     X,Y = zip(*warehouse.walls)
     x_size, y_size = 1 + max(X), 1 + max(Y)
-    
+
     # Get all map coordinates
     all_possible_coordinates = list(itertools.product(range(x_size), range(y_size)))
-    
+
     # Get all floor (non-wall) tiles
 
     floor = [coordinate for coordinate in all_possible_coordinates if coordinate not in warehouse.walls]
@@ -93,15 +93,15 @@ def taboo_coordinates(warehouse):
 
     # Get all corner tiles
     corners = [(x,y) for x,y in floor if is_corner(warehouse, (x,y))]
-    
+
     # Add non-target corners to taboo cells
     taboo = [(x,y) for x,y in corners if (x,y) not in warehouse.targets]
-    
+
     #Pair all corners with all other corners and put in list
     all_corner_pairs = itertools.permutations(corners, 2)
-    
+
     #Check for floor tiles between corners, without targets, and add to taboo list
-    
+
     #Pull each set of corner pairs
     for corner_pair in all_corner_pairs:
         #Check if those corners are in same column
@@ -116,16 +116,16 @@ def taboo_coordinates(warehouse):
 
             target_between_corners = False
             #Check if any targets are between the corners
-            for target in warehouse.targets: 
+            for target in warehouse.targets:
                 if vertically_aligned(corner_pair[0], target) and ((target[1] > taboo_y_min) or (target[1] < taboo_y_max)):
                     target_between_corners = True
                     break
             if not target_between_corners:
                 taboo_x = corner_pair[0][0]
                 #Check if each floor cell is in same column and between corners
-                taboo += [(x,y) for x,y in floor_next_to_wall if x == taboo_x and ((y > taboo_y_min) and (y < taboo_y_max))]  
+                taboo += [(x,y) for x,y in floor_next_to_wall if x == taboo_x and ((y > taboo_y_min) and (y < taboo_y_max))]
 
-                    
+
         elif horizontally_aligned(corner_pair[0], corner_pair[1]):
             #Check if those corners are in same row
             if horizontally_aligned(corner_pair[0], corner_pair[1]):
@@ -136,17 +136,17 @@ def taboo_coordinates(warehouse):
                 else:
                     taboo_x_min = corner_pair[1][0]
                     taboo_x_max = corner_pair[0][0]
-    
+
                     target_between_corners = False
                     #Check if any targets are between the corners
-                    for target in warehouse.targets: 
+                    for target in warehouse.targets:
                         if horizontally_aligned(corner_pair[0], target) and ((target[0] > taboo_x_min) or (target[0] < taboo_x_max)):
                             target_between_corners = True
                             break
                     if not target_between_corners:
                         taboo_y = corner_pair[0][1]
-                        #Check if each floor cell is in same column and between corners and add to taboo list 
-                        taboo += [(x,y) for x,y in floor_next_to_wall if y == taboo_y and ((x > taboo_x_min) and (x < taboo_x_max))]  
+                        #Check if each floor cell is in same column and between corners and add to taboo list
+                        taboo += [(x,y) for x,y in floor_next_to_wall if y == taboo_y and ((x > taboo_x_min) and (x < taboo_x_max))]
     return taboo
 
 #DONE
@@ -161,14 +161,14 @@ def is_corner(warehouse, floor_cell):
         return True
     if (x + 1,y) in warehouse.walls and (x, y - 1) in warehouse.walls:
         return True
-    
+
     return False
-    
+
 #def get_dist_to_closest_cell(origin, cells):
     #min_distance = 0
     #if len(cells) > 0:
    #     min_distance = manhattan_distance(origin, cells[0])
-        
+
         #for cell in cells:
 # end of observable code on this method.
 
@@ -189,9 +189,9 @@ def is_corner(warehouse, floor_cell):
 			# elif dist < min_dist:
 				# min_dist = dist
 		# value += min_dist
-	
-	# return value	
-    
+
+	# return value
+
 #def manhattan_distance(cell_a, cell_b):
  #   return abs(cell_a[0] - cell_b[0]) + abs(cell_a[1] - cell_b[1])
 # end of observable code on this method.
@@ -248,34 +248,34 @@ class SokobanPuzzle(search.Problem):
     Class to represent a Sokoban puzzle.
     Your implementation should be compatible with the
     search functions of the provided module 'search.py'.
-    
+
         Use the sliding puzzle and the pancake puzzle for inspiration!
-    
+
     '''
     #DONE
     def __init__(self, warehouse):
 
         self.wh = warehouse
         self.initial_state = ((warehouse.worker),) + tuple(warehouse.boxes)
-        
+
     #DONE
     def actions(self, state):
         """
-        Return the list of actions that can be executed in the given state 
+        Return the list of actions that can be executed in the given state
         if these actions put the builder into an empty space and
 		do not push a box in a taboo cell, a wall, or into another box.
-        The actions must belong to the list ['Left', 'Down', 'Right', 'Up']   
-        NO TABOO!!!!!!!!!!!!!!     
+        The actions must belong to the list ['Left', 'Down', 'Right', 'Up']
+        NO TABOO!!!!!!!!!!!!!!
         """
-        
+
         OK_actions = []
-        
+
         #what is to the (direction), is it a wall or a box?
         cell_to_right = cell_in_direction(state[0], "Right")
         cell_to_left = cell_in_direction(state[0], "Left")
         cell_up = cell_in_direction(state[0], "Up")
         cell_down = cell_in_direction(state[0], "Down")
-        
+
         #if no wall or box on the right, add it to action list
         if cell_to_right not in self.wh.walls and cell_to_right not in state:
             OK_actions += ("Right",)
@@ -286,7 +286,7 @@ class SokobanPuzzle(search.Problem):
             #if box's right is good, add right to action list
             if box_right not in taboo_cells(state) and box_right not in self.wh.walls and box_right not in state:
                 OK_actions += ("Right",)
-        
+
         #if no wall or box on the left, add it to action list
         if cell_to_left not in self.wh.walls and cell_to_left not in state:
             OK_actions += ("Left",)
@@ -297,7 +297,7 @@ class SokobanPuzzle(search.Problem):
             #if box's left is good, add left to action list
             if box_left not in taboo_cells(state) and box_left not in self.wh.walls and box_left not in state:
                 OK_actions += ("Left",)
-        
+
         #exact same thing as above, but for up and down directions
         if cell_up not in self.wh.walls and cell_up not in state:
             OK_actions += ("Up",)
@@ -311,28 +311,28 @@ class SokobanPuzzle(search.Problem):
         elif cell_down in state:
             box_down = cell_in_direction(cell_down, "Down")
             if box_down not in taboo_cells(state) and box_down not in self.wh.walls and box_down not in state:
-                OK_actions += ("Down",)   
-				
+                OK_actions += ("Down",)
+
         return OK_actions
-	
+
     #DONE
     def legal_actions(self, state):
         """
-        Return the list of actions that can be executed in the given state 
+        Return the list of actions that can be executed in the given state
         if these actions put the builder in an empty space or
 		do not push a box in a wall, or into another box.
 		Does not care if box is pushed to taboo space!!!!!!!!!!
-        The actions must belong to the list ['Left', 'Down', 'Right', 'Up']        
+        The actions must belong to the list ['Left', 'Down', 'Right', 'Up']
         """
-        
+
         OK_actions = ()
-        
+
         #what is to the (direction), is it a wall or a box?
         cell_to_right = cell_in_direction(state[0], "Right")
         cell_to_left = cell_in_direction(state[0], "Left")
         cell_up = cell_in_direction(state[0], "Up")
         cell_down = cell_in_direction(state[0], "Down")
-        
+
         #if no wall or box on the right, add it to action list
         if cell_to_right not in self.wh.walls and cell_to_right not in state:
             OK_actions += ("Right",)
@@ -343,7 +343,7 @@ class SokobanPuzzle(search.Problem):
             #if box's right is good, add right to action list
             if box_right not in self.wh.walls and box_right not in state:
                 OK_actions += ("Right")
-        
+
         #if no wall or box on the left, add it to action list
         if cell_to_left not in self.wh.walls and cell_to_left not in state:
             OK_actions += ("Left",)
@@ -354,7 +354,7 @@ class SokobanPuzzle(search.Problem):
             #if box's left is good, add left to action list
             if box_left not in self.wh.walls and box_left not in state:
                 OK_actions += ("Left",)
-        
+
         #exact same thing as above, but for up and down directions
         if cell_up not in self.wh.walls and cell_up not in state:
             OK_actions += ("Up",)
@@ -368,10 +368,10 @@ class SokobanPuzzle(search.Problem):
         elif cell_down in state:
             box_down = cell_in_direction(cell_down, "Down")
             if box_down not in self.wh.walls and box_down not in state:
-                OK_actions += ("Down",)   
-                
+                OK_actions += ("Down",)
+
         return OK_actions
-    
+
 	#DONE
     def result(self, state, action):
         """Return the state that results from executing the given action in the given state. The action must be one of self.actions(state)."""
@@ -380,7 +380,7 @@ class SokobanPuzzle(search.Problem):
         new_state = state
         if cell_in_direction(state[0], action) in state[1:]:
             i = 1
-            #find which box 
+            #find which box
             for box in state[1:]:
                 #if we find the box that builder is moving to
                 if cell_in_direction(state[0], action) == box:
@@ -394,15 +394,15 @@ class SokobanPuzzle(search.Problem):
             new_state_list = list(new_state)
             new_state_list[0] = cell_in_direction(state[0], action)
             new_state = tuple(new_state_list)
-            
+
         else:
             new_state_list = list(new_state)
             new_state_list[0] = cell_in_direction(state[0], action)
             new_state = tuple(new_state_list)
- 
+
         return new_state
-    
-    
+
+
     def goal_test(self, state):
         """Return True if the state is a goal. The default method compares the
         state to self.goal, as specified in the constructor. Override this
@@ -412,7 +412,7 @@ class SokobanPuzzle(search.Problem):
 #            return True
   #      else:
    #         return False
-        
+
     def path_cost(self, c, state1, action, state2):
         """Return the cost of a solution path that arrives at state2 from
         state1 via action, assuming cost c to get up to state1. If the problem
@@ -424,13 +424,13 @@ class SokobanPuzzle(search.Problem):
 	#DONE
     def value(self, state):
         """For optimization problems, each state has a value.  Hill-climbing
-        and related algorithms try to maximize this value. Returns 
+        and related algorithms try to maximize this value. Returns
 		the value of the state passed to it as a sum of all the
 		diagonal distances of each box to its closest target."""
-		
+
 		# There must be an equal number of targets and boxes
         assert(len(state) == len(state.targets))
-		
+
         value = 0
         first = True
         dist = 0
@@ -454,7 +454,7 @@ class SokobanPuzzle(search.Problem):
                     min_dist = dist
 			#add the minimum distance for each box to value
             value += min_dist
-	
+
         return value
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -463,21 +463,21 @@ def check_action_seq(warehouse, action_seq):
     '''
     Check if action sequence is french legal
     Determine if the sequence of actions listed in 'action_seq' is legal or not.
-    
+
     Important notes:
       - a legal sequence of actions does not necessarily solve the puzzle.
       - an action is legal even if it pushes a box onto a taboo cell.
-        
+
     @param warehouse: a valid Warehouse object
 
     @param action_seq: a sequence of legal actions.
            For example, ['Left', 'Down', Down','Right', 'Up', 'Down']
-           
+
     @return
         The string 'Failure', if one of the action was not successul.
            For example, if the agent tries to push two boxes at the same time,
                         or push one box into a wall.
-        Otherwise, if all actions were successful, return                 
+        Otherwise, if all actions were successful, return
                A string representing the state of the puzzle after applying
                the sequence of actions.  This must be the same string as the
                string returned by the method  Warehouse.__str__()
@@ -501,17 +501,17 @@ def check_no_taboo_action_seq(warehouse, action_seq):
     '''
     Check if action sequence is norwegian legal
     Determine if the sequence of actions listed in 'action_seq' is legal-NO TABOO or not.
-        
+
     @param warehouse: a valid Warehouse object
 
     @param action_seq: a sequence of legal actions.
            For example, ['Left', 'Down', Down','Right', 'Up', 'Down']
-           
+
     @return
         The string 'Failure', if one of the action was not successul.
            For example, if the agent tries to push two boxes at the same time,
                         or push one box into a wall, OR PUSH A BOX INTO A TABOO SPOT.
-        Otherwise, if all actions were successful, return                 
+        Otherwise, if all actions were successful, return
                A string representing the state of the puzzle after applying
                the sequence of actions.  This must be the same string as the
                string returned by the method  Warehouse.__str__()
@@ -532,10 +532,10 @@ def check_no_taboo_action_seq(warehouse, action_seq):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 def solve_sokoban_elem(warehouse):
-    '''    
-    This function should solve using elementary actions 
+    '''
+    This function should solve using elementary actions
     the puzzle defined in a file.
-    
+
     @param warehouse: a valid Warehouse object
 
     @return
@@ -546,42 +546,87 @@ def solve_sokoban_elem(warehouse):
             For example, ['Left', 'Down', Down','Right', 'Up', 'Down']
             If the puzzle is already in a goal state, simply return []
     '''
-    
+
     ##         "INSERT YOUR CODE HERE"
-    
+
     raise NotImplementedError()
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 def can_go_there(warehouse, dst):
-    '''    
-    Determine whether the worker can walk to the cell dst=(row,col) 
+    '''
+    Determine whether the worker can walk to the cell dst=(row,col)
     without pushing any box.
-    
+
     @param warehouse: a valid Warehouse object
 
     @return
       True if the worker can walk to cell dst=(row,col) without pushing any box
       False otherwise
     '''
+    dst_accessible = False
+    X,Y = zip(*warehouse.walls)
+    x_size, y_size = 1 + max(X), 1 + max(Y)
     
-    ##         "INSERT YOUR CODE HERE"
-    
-    raise NotImplementedError()
+    #is worker already in goal coordinate - return true
+    if warehouse.worker == dst:
+        return True
+    else:
+        explored = []
+        #add starting position expanded directions to frontier
+        frontier = [warehouse.worker,]
+        for cell in frontier:
+            #narrow down frontier to not a wall or a box or explored
+            if cell not in warehouse.walls and cell not in warehouse.boxes and cell not in explored and cell[0] > 0 and cell[0] < x_size and cell[1] > 0 and cell[1] < y_size:
+                print(frontier)
+                #check if any is goal coordinate, if so change goal_accessible to True and break
+                if tuple(cell) == dst:
+                    dst_accessible = True
+                    return True
+                
+                #expand cell in each direction and add all those to frontier
+                cell_temp = cell_in_direction(cell, "Up")
+                if cell_temp not in warehouse.walls and cell_temp not in warehouse.boxes and cell_temp not in explored and cell_temp[0] > 0 and cell_temp[0] < x_size and cell_temp[1] > 0 and cell_temp[1] < y_size:
+                    frontier +=  [list(cell_in_direction(cell, "Up")),] 
+
+                cell_temp = cell_in_direction(cell, "Down")
+                if cell_temp not in warehouse.walls and cell_temp not in warehouse.boxes and cell_temp not in explored and cell_temp[0] > 0 and cell_temp[0] < x_size and cell_temp[1] > 0 and cell_temp[1] < y_size:
+                      frontier += [list(cell_in_direction(cell, "Down")),] 
+ 
+                cell_temp = cell_in_direction(cell, "Left")
+                if cell_temp not in warehouse.walls and cell_temp not in warehouse.boxes and cell_temp not in explored and cell_temp[0] > 0 and cell_temp[0] < x_size and cell_temp[1] > 0 and cell_temp[1] < y_size:
+                      frontier += [list(cell_in_direction(cell, "Left")),]                      
+                    
+                cell_temp = cell_in_direction(cell, "Right")
+                if cell_temp not in warehouse.walls and cell_temp not in warehouse.boxes and cell_temp not in explored and cell_temp[0] > 0 and cell_temp[0] < x_size and cell_temp[1] > 0 and cell_temp[1] < y_size:
+                      frontier += [list(cell_in_direction(cell, "Right")),] 
+                      
+                #add cell to explored
+            explored + [cell,]
+               #frontier.remove([cell[0],cell[1]])
+                
+        print()
+        print()
+        print()
+        print("RESULT: ")
+        print(dst_accessible)
+        print()
+        print()
+        return False
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 def solve_sokoban_macro(warehouse):
-    '''    
+    '''
     Solve using macro actions the puzzle defined in the warehouse passed as
-    a parameter. A sequence of macro actions should be 
+    a parameter. A sequence of macro actions should be
     represented by a list M of the form
             [ ((r1,c1), a1), ((r2,c2), a2), ..., ((rn,cn), an) ]
-    For example M = [ ((3,4),'Left') , ((5,2),'Up'), ((12,4),'Down') ] 
+    For example M = [ ((3,4),'Left') , ((5,2),'Up'), ((12,4),'Down') ]
     means that the worker first goes the box at row 3 and column 4 and pushes it left,
     then goes the box at row 5 and column 2 and pushes it up, and finally
     goes the box at row 12 and column 4 and pushes it down.
-    
+
     @param warehouse: a valid Warehouse object
 
     @return
@@ -589,11 +634,9 @@ def solve_sokoban_macro(warehouse):
         Otherwise return M a sequence of macro actions that solves the puzzle.
         If the puzzle is already in a goal state, simply return []
     '''
-    
+
     ##         "INSERT YOUR CODE HERE"
-    
+
     raise NotImplementedError()
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-

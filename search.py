@@ -6,8 +6,8 @@
 This search module is loosely based on the AIMA book.
 Search (Chapters 3-4)
 
-The way to use this code is to subclass the class 'Problem' to create 
-your own class of problems,  then create problem instances and solve them with 
+The way to use this code is to subclass the class 'Problem' to create
+your own class of problems,  then create problem instances and solve them with
 calls to the various search functions.
 
 Last modified 2017-03-18
@@ -248,7 +248,7 @@ class Node:
         next = problem.result(self.state, action)
         return Node(next, # next is a state
                     self, # parent is a node
-                    action, # from this state to next state 
+                    action, # from this state to next state
                     problem.path_cost(self.path_cost, self.state, action, next)
                     )
 
@@ -340,7 +340,7 @@ def breadth_first_graph_search(problem):
     "Graph search version of BFS.  [Fig. 3.11]"
     return graph_search(problem, FIFOQueue())
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 def best_first_tree_search(problem, f):
     """
@@ -460,7 +460,6 @@ def astar_tree_search(problem, h=None):
 #______________________________________________________________________________
 #
 
-# + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + 
+# + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + +
 #                              CODE CEMETARY
-# + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + 
-
+# + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + +

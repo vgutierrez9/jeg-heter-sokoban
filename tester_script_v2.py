@@ -144,15 +144,18 @@ def test_solve_sokoban_elem():
         
 
 def test_can_go_there():
-    problem_file = "./warehouses/warehouse_01.txt"
+    problem_file = "./warehouses/warehouse_03.txt"
     wh = Warehouse()
     wh.read_warehouse_file(problem_file)
     print(wh)
     answer = can_go_there(wh,(30,2))
     assert( answer ==  False)
-    answer = can_go_there(wh,(6,2))
+    print("TEST 1 PASSED")
+    print("worker:")
+    print(wh.worker)
+    answer = can_go_there(wh, (8,4))
     assert( answer ==  True)
-    
+    print("TEST 2 PASSED")
   
 def test_solve_sokoban_macro():
     wh = Warehouse()
@@ -184,9 +187,9 @@ if __name__ == "__main__":
     
 #    print(my_team())  # should print your team
 
-    test_taboo_cells() 
+#    test_taboo_cells() 
 #    test_check_elem_action_seq()
 #    test_solve_sokoban_elem()
-#    test_can_go_there()
+    test_can_go_there()
 #    test_solve_sokoban_macro()   
 #    test_check_macro_action_seq()
