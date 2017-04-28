@@ -49,9 +49,11 @@ def taboo_cells(warehouse):
        The returned string should NOT have marks for the worker, the targets,
        and the boxes.
     '''
+    print("in taboo cells")
+    print(warehouse.walls)
     coordinate_list = taboo_coordinates(warehouse)
 
-    X,Y = zip(*warehouse.walls) # pythonic version of the above
+    X,Y = zip(*warehouse.walls)
     x_size, y_size = 1+max(X), 1+max(Y)
 
     vis = [[" "] * x_size for y in range(y_size)]
@@ -80,6 +82,8 @@ def taboo_coordinates(warehouse):
        A list containing the coordinates for all the taboo cell
     '''
     # Get map dimensions
+    #print("Hello")
+
     X,Y = zip(*warehouse.walls)
     x_size, y_size = 1 + max(X), 1 + max(Y)
 
@@ -176,21 +180,21 @@ def is_corner(warehouse, floor_cell):
     # # There must be an equal number of targets and boxes
     # assert(len(boxes) == len(targets))
     # value = 0
-	# first = True
-	# dist = 0
-	# for box in boxes:
-		# box_x, box_y = zip(*box)
-		# for target in targets:
-			# target_x, target_y = zip(*target)
-			# dist = math.sqrt((box_x - target_x)**2 + (box_y - target_y)**2 )
-			# if first:
-				# min_dist = dist
-				# first = False
-			# elif dist < min_dist:
-				# min_dist = dist
-		# value += min_dist
+    # first = True
+    # dist = 0
+    # for box in boxes:
+        # box_x, box_y = zip(*box)
+        # for target in targets:
+            # target_x, target_y = zip(*target)
+            # dist = math.sqrt((box_x - target_x)**2 + (box_y - target_y)**2 )
+            # if first:
+                # min_dist = dist
+                # first = False
+            # elif dist < min_dist:
+                # min_dist = dist
+        # value += min_dist
 
-	# return value
+    # return value
 
 #def manhattan_distance(cell_a, cell_b):
  #   return abs(cell_a[0] - cell_b[0]) + abs(cell_a[1] - cell_b[1])
@@ -256,18 +260,19 @@ class SokobanPuzzle(search.Problem):
     def __init__(self, warehouse):
 
         self.wh = warehouse
-        self.initial_state = ((warehouse.worker),) + tuple(warehouse.boxes)
+        self.initial = ((warehouse.worker),) + tuple(warehouse.boxes)
 
     #DONE
     def actions(self, state):
         """
         Return the list of actions that can be executed in the given state
         if these actions put the builder into an empty space and
-		do not push a box in a taboo cell, a wall, or into another box.
+        do not push a box in a taboo cell, a wall, or into another box.
         The actions must belong to the list ['Left', 'Down', 'Right', 'Up']
         NO TABOO!!!!!!!!!!!!!!
         """
-
+        #print("in actions")
+        #print(self.wh.walls)
         OK_actions = []
 
         #what is to the (direction), is it a wall or a box?
@@ -284,7 +289,7 @@ class SokobanPuzzle(search.Problem):
             #what's on box's right?
             box_right = cell_in_direction(cell_to_right, "Right")
             #if box's right is good, add right to action list
-            if box_right not in taboo_cells(state) and box_right not in self.wh.walls and box_right not in state:
+            if box_right not in taboo_coordinates(self.wh) and box_right not in self.wh.walls and box_right not in state:
                 OK_actions += ("Right",)
 
         #if no wall or box on the left, add it to action list
@@ -295,7 +300,7 @@ class SokobanPuzzle(search.Problem):
             #what's on box's left?
             box_left = cell_in_direction(cell_to_right, "Left")
             #if box's left is good, add left to action list
-            if box_left not in taboo_cells(state) and box_left not in self.wh.walls and box_left not in state:
+            if box_left not in taboo_coordinates(self.wh) and box_left not in self.wh.walls and box_left not in state:
                 OK_actions += ("Left",)
 
         #exact same thing as above, but for up and down directions
@@ -303,14 +308,14 @@ class SokobanPuzzle(search.Problem):
             OK_actions += ("Up",)
         elif cell_up in state:
             box_up = cell_in_direction(cell_up, "Up")
-            if box_up not in taboo_cells(state) and box_up not in self.wh.walls and box_up not in state:
+            if box_up not in taboo_coordinates(self.wh) and box_up not in self.wh.walls and box_up not in state:
                 OK_actions += ("Up",)
 
         if cell_down not in self.wh.walls and cell_down not in state:
             OK_actions += ("Down",)
         elif cell_down in state:
             box_down = cell_in_direction(cell_down, "Down")
-            if box_down not in taboo_cells(state) and box_down not in self.wh.walls and box_down not in state:
+            if box_down not in taboo_coordinates(self.wh) and box_down not in self.wh.walls and box_down not in state:
                 OK_actions += ("Down",)
 
         return OK_actions
@@ -320,8 +325,8 @@ class SokobanPuzzle(search.Problem):
         """
         Return the list of actions that can be executed in the given state
         if these actions put the builder in an empty space or
-		do not push a box in a wall, or into another box.
-		Does not care if box is pushed to taboo space!!!!!!!!!!
+        do not push a box in a wall, or into another box.
+        Does not care if box is pushed to taboo space!!!!!!!!!!
         The actions must belong to the list ['Left', 'Down', 'Right', 'Up']
         """
 
@@ -372,11 +377,11 @@ class SokobanPuzzle(search.Problem):
 
         return OK_actions
 
-	#DONE
+    #DONE
     def result(self, state, action):
         """Return the state that results from executing the given action in the given state. The action must be one of self.actions(state)."""
         #assert action in self.actions(state)
-		#is the cell builder moving to a box?
+        #is the cell builder moving to a box?
         new_state = state
         if cell_in_direction(state[0], action) in state[1:]:
             i = 1
@@ -407,11 +412,24 @@ class SokobanPuzzle(search.Problem):
         """Return True if the state is a goal. The default method compares the
         state to self.goal, as specified in the constructor. Override this
         method if checking against a single self.goal is not enough."""
-#		#Do we need to sort boxes and targets first?
-#        if (set(state) & set(self.wh.targets)) == len(state):
-#            return True
-  #      else:
-   #         return False
+
+        num_box_on_target = 0
+        
+        for box in state[1:]:
+            if box in self.wh.targets:
+                num_box_on_target += 1
+        
+        print("num box target:")
+        print(num_box_on_target)
+        print("targets")
+        print(self.wh.targets)
+        print("target length")
+        print(len(self.wh.targets))
+        if num_box_on_target == len(self.wh.targets):
+            print("GOAL")
+            return True
+        else:
+           return False
 
     def path_cost(self, c, state1, action, state2):
         """Return the cost of a solution path that arrives at state2 from
@@ -421,38 +439,38 @@ class SokobanPuzzle(search.Problem):
         and action. The default method costs 1 for every step in the path."""
         return c + 1
 
-	#DONE
+    #DONE
     def value(self, state):
         """For optimization problems, each state has a value.  Hill-climbing
         and related algorithms try to maximize this value. Returns
-		the value of the state passed to it as a sum of all the
-		diagonal distances of each box to its closest target."""
+        the value of the state passed to it as a sum of all the
+        diagonal distances of each box to its closest target."""
 
-		# There must be an equal number of targets and boxes
+        # There must be an equal number of targets and boxes
         assert(len(state) == len(state.targets))
 
         value = 0
         first = True
         dist = 0
         boxes = state[1:]
-		#get each box, one at a time
+        #get each box, one at a time
         for box in boxes:
-			#separate the box's x, y coordinates
+            #separate the box's x, y coordinates
             box_x, box_y = zip(*box)
-			#get each target one at a time and find the distance to the target that is closest to the box
+            #get each target one at a time and find the distance to the target that is closest to the box
             for target in self.wh.targets:
-				#separate the target's x,y coordinates
+                #separate the target's x,y coordinates
                 target_x, target_y = zip(*target)
-				#find the diagonal distance (via hypotenus)
+                #find the diagonal distance (via hypotenus)
                 dist = math.sqrt((box_x - target_x)**2 + (box_y - target_y)**2 )
-				#if first target, save that distance as minimum distance
+                #if first target, save that distance as minimum distance
                 if first:
                     min_dist = dist
                     first = False
-				#Save distance as minimum distance if it is less than the existing minimum distance
+                #Save distance as minimum distance if it is less than the existing minimum distance
                 elif dist < min_dist:
                     min_dist = dist
-			#add the minimum distance for each box to value
+            #add the minimum distance for each box to value
             value += min_dist
 
         return value
@@ -484,7 +502,7 @@ def check_action_seq(warehouse, action_seq):
     '''
 
     skp = SokobanPuzzle(warehouse)
-    temp_state = skp.initial_state
+    temp_state = skp.initial
     for direction in action_seq:
         if direction in skp.legal_actions(temp_state):
             temp_state = skp.result(temp_state, direction)
@@ -517,7 +535,7 @@ def check_no_taboo_action_seq(warehouse, action_seq):
                string returned by the method  Warehouse.__str__()
     '''
     skp = SokobanPuzzle(warehouse)
-    temp_state = skp.initial_state
+    temp_state = skp.initial
     for direction in action_seq:
         if direction in skp.actions(temp_state):
             temp_state = skp.result(temp_state, direction)
@@ -545,14 +563,21 @@ def solve_sokoban_elem(warehouse):
             the given puzzle coded with 'Left', 'Right', 'Up', 'Down'
             For example, ['Left', 'Down', Down','Right', 'Up', 'Down']
             If the puzzle is already in a goal state, simply return []
+           
     '''
-
-    ##         "INSERT YOUR CODE HERE"
-
-    raise NotImplementedError()
-
+    print("In sokoban solve elem")
+    print(warehouse.walls)
+    skp = SokobanPuzzle(warehouse)
+    print("skp walls")
+    print(skp.wh.walls)
+    print(search.breadth_first_graph_search(skp))
+    #get the list of coordinates given from above
+    #turn list of coordinates into list of strings
+    #return list of strings
+    
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+#DONE!!!!!
 def can_go_there(warehouse, dst):
     '''
     Determine whether the worker can walk to the cell dst=(row,col)
@@ -566,7 +591,7 @@ def can_go_there(warehouse, dst):
     '''
 
     X,Y = zip(*warehouse.walls)
-	#get the maximum values of the x,y coordinates that are in the warehouse
+    #get the maximum values of the x,y coordinates that are in the warehouse
     x_size, y_size = 1 + max(X), 1 + max(Y)
     
     #is worker already in goal coordinate - return true
@@ -576,12 +601,12 @@ def can_go_there(warehouse, dst):
         explored = []
         #add starting position expanded directions to frontier
         frontier = [warehouse.worker,]
-		
+        
         for cell in frontier:
             #check if cell being explored is valid (not a wall, box, explored or out of bounds)
             if cell not in warehouse.walls and cell not in warehouse.boxes and cell not in explored and cell[0] > 0 and cell[0] < x_size and cell[1] > 0 and cell[1] < y_size:
                 
-				#check if the cell is the goal coordinate, if so stop searching and return true
+                #check if the cell is the goal coordinate, if so stop searching and return true
                 if tuple(cell) == dst:                 
                     return True
                 
@@ -602,10 +627,10 @@ def can_go_there(warehouse, dst):
                 if cell_temp not in warehouse.walls and cell_temp not in warehouse.boxes and cell_temp not in explored and cell_temp[0] > 0 and cell_temp[0] < x_size and cell_temp[1] > 0 and cell_temp[1] < y_size:
                     frontier += [list(cell_in_direction(cell, "Right")),] 
             
-			
+            
             #add cell to explored
             explored += [cell,]
-			
+            
         #all possible paths from the worker cell have been explored without reaching the destination, so return false
         return False
 

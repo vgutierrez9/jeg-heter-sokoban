@@ -291,6 +291,7 @@ def tree_search(problem, frontier):
     assert isinstance(problem, Problem)
     frontier.append(Node(problem.initial))
     while frontier:
+        print(frontier)
         node = frontier.pop()
         if problem.goal_test(node.state):
             return node

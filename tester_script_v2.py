@@ -129,13 +129,16 @@ def test_check_elem_action_seq():
         
 
 def test_solve_sokoban_elem():
-#    problem_file = "./warehouses/warehouse_01.txt"
+    problem_file = "./warehouses/warehouse_01.txt"
     wh = Warehouse()
-#    wh.read_warehouse_file(problem_file)
+    wh.read_warehouse_file(problem_file)
     wh.extract_locations(puzzle_t1.split(sep='\n'))
     print(wh)
+    #rint(wh.walls)
     print('\nElementary solution')
     answer = solve_sokoban_elem(wh)
+    print("STOP")
+    
     print(answer)
     if  answer ==  ['Right', 'Right']:
         print('Test solve_sokoban_elem passed\n')
@@ -189,7 +192,7 @@ if __name__ == "__main__":
 
 #    test_taboo_cells() 
 #    test_check_elem_action_seq()
-#    test_solve_sokoban_elem()
-    test_can_go_there()
+    test_solve_sokoban_elem()
+ #   test_can_go_there()
 #    test_solve_sokoban_macro()   
 #    test_check_macro_action_seq()
