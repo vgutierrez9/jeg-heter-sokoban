@@ -153,8 +153,8 @@ def test_can_go_there():
     print("TEST 1 PASSED")
     print("worker:")
     print(wh.worker)
-    answer = can_go_there(wh, (8,4))
-    assert( answer ==  True)
+    answer = can_go_there(wh, (2,3))
+    assert( answer ==  False)
     print("TEST 2 PASSED")
   
 def test_solve_sokoban_macro():

@@ -564,8 +564,9 @@ def can_go_there(warehouse, dst):
       True if the worker can walk to cell dst=(row,col) without pushing any box
       False otherwise
     '''
-    dst_accessible = False
+
     X,Y = zip(*warehouse.walls)
+	#get the maximum values of the x,y coordinates that are in the warehouse
     x_size, y_size = 1 + max(X), 1 + max(Y)
     
     #is worker already in goal coordinate - return true
@@ -575,43 +576,37 @@ def can_go_there(warehouse, dst):
         explored = []
         #add starting position expanded directions to frontier
         frontier = [warehouse.worker,]
+		
         for cell in frontier:
-            #narrow down frontier to not a wall or a box or explored
+            #check if cell being explored is valid (not a wall, box, explored or out of bounds)
             if cell not in warehouse.walls and cell not in warehouse.boxes and cell not in explored and cell[0] > 0 and cell[0] < x_size and cell[1] > 0 and cell[1] < y_size:
-                print(frontier)
-                #check if any is goal coordinate, if so change goal_accessible to True and break
-                if tuple(cell) == dst:
-                    dst_accessible = True
+                
+				#check if the cell is the goal coordinate, if so stop searching and return true
+                if tuple(cell) == dst:                 
                     return True
                 
-                #expand cell in each direction and add all those to frontier
+                #expand cell in each direction and add the valid results cells to frontier
                 cell_temp = cell_in_direction(cell, "Up")
                 if cell_temp not in warehouse.walls and cell_temp not in warehouse.boxes and cell_temp not in explored and cell_temp[0] > 0 and cell_temp[0] < x_size and cell_temp[1] > 0 and cell_temp[1] < y_size:
                     frontier +=  [list(cell_in_direction(cell, "Up")),] 
 
                 cell_temp = cell_in_direction(cell, "Down")
                 if cell_temp not in warehouse.walls and cell_temp not in warehouse.boxes and cell_temp not in explored and cell_temp[0] > 0 and cell_temp[0] < x_size and cell_temp[1] > 0 and cell_temp[1] < y_size:
-                      frontier += [list(cell_in_direction(cell, "Down")),] 
+                    frontier += [list(cell_in_direction(cell, "Down")),] 
  
                 cell_temp = cell_in_direction(cell, "Left")
                 if cell_temp not in warehouse.walls and cell_temp not in warehouse.boxes and cell_temp not in explored and cell_temp[0] > 0 and cell_temp[0] < x_size and cell_temp[1] > 0 and cell_temp[1] < y_size:
-                      frontier += [list(cell_in_direction(cell, "Left")),]                      
+                    frontier += [list(cell_in_direction(cell, "Left")),]                      
                     
                 cell_temp = cell_in_direction(cell, "Right")
                 if cell_temp not in warehouse.walls and cell_temp not in warehouse.boxes and cell_temp not in explored and cell_temp[0] > 0 and cell_temp[0] < x_size and cell_temp[1] > 0 and cell_temp[1] < y_size:
-                      frontier += [list(cell_in_direction(cell, "Right")),] 
-                      
-                #add cell to explored
-            explored + [cell,]
-               #frontier.remove([cell[0],cell[1]])
-                
-        print()
-        print()
-        print()
-        print("RESULT: ")
-        print(dst_accessible)
-        print()
-        print()
+                    frontier += [list(cell_in_direction(cell, "Right")),] 
+            
+			
+            #add cell to explored
+            explored += [cell,]
+			
+        #all possible paths from the worker cell have been explored without reaching the destination, so return false
         return False
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
