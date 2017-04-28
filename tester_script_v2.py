@@ -98,14 +98,16 @@ def test_warehouse_2():
     print(wh.walls)  # x,y  coords !!
     
 def test_taboo_cells():
+    problem_file = "./warehouses/warehouse_59.txt"
     wh = Warehouse()
-    wh.extract_locations(puzzle_t3.split(sep='\n'))
+    wh.read_warehouse_file(problem_file)
     answer = taboo_cells(wh)
     # begin debug
     print(answer)
+    print(wh)
     print(len(answer))
-    print(expected_answer_3)
-    print(len(expected_answer_3))
+    #print(expected_answer_3)
+    #print(len(expected_answer_3))
     # end debug
     if same_multi_line_strings(answer,expected_answer_3):
         print('Test taboo_cells passed\n')
@@ -129,10 +131,10 @@ def test_check_elem_action_seq():
         
 
 def test_solve_sokoban_elem():
-    problem_file = "./warehouses/warehouse_01.txt"
+    problem_file = "./warehouses/warehouse_205.txt"
     wh = Warehouse()
     wh.read_warehouse_file(problem_file)
-    wh.extract_locations(puzzle_t1.split(sep='\n'))
+    #wh.extract_locations(puzzle_t2.split(sep='\n'))
     print(wh)
     #rint(wh.walls)
     print('\nElementary solution')
