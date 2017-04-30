@@ -103,6 +103,7 @@ def test_taboo_cells():
     wh.read_warehouse_file(problem_file)
     answer = taboo_cells(wh)
     # begin debug
+    print("Taboo Cells")
     print(answer)
     print(wh)
     print(len(answer))
@@ -131,7 +132,7 @@ def test_check_elem_action_seq():
         
 
 def test_solve_sokoban_elem():
-    problem_file = "./warehouses/warehouse_205.txt"
+    problem_file = "./warehouses/warehouse_75.txt"
     wh = Warehouse()
     wh.read_warehouse_file(problem_file)
     #wh.extract_locations(puzzle_t2.split(sep='\n'))
@@ -163,8 +164,9 @@ def test_can_go_there():
     print("TEST 2 PASSED")
   
 def test_solve_sokoban_macro():
+    problem_file = "./warehouses/warehouse_73.txt"
     wh = Warehouse()
-    wh.extract_locations(puzzle_t3.split(sep='\n'))
+    wh.read_warehouse_file(problem_file)
     print(wh)
     answer = solve_sokoban_macro(wh)
     print(answer)
@@ -173,16 +175,18 @@ def test_solve_sokoban_macro():
 #    print(wh.boxes)  # x,y  coords !!
 
 def test_check_macro_action_seq():
+    problem_file = "./warehouses/warehouse_01.txt"
     wh = Warehouse()
-    wh.extract_locations(puzzle_t1.split(sep='\n'))
+    wh.read_warehouse_file(problem_file)
     print(wh)
     answer = solve_sokoban_macro(wh.copy())
+    print("Macro answer")
     print(answer)
 
-    print("\ntesting [((2, 3), 'Right')]")
-    print( check_macro_action_seq(wh.copy(),[((2, 3), 'Right')]) )
-    print("\ntesting [((2, 3), 'Left')]")
-    print( check_macro_action_seq(wh.copy(), [((2, 3), 'Left')]) )
+    #print("\ntesting [((2, 3), 'Right')]")
+    #print( check_macro_action_seq(wh.copy(),[((2, 3), 'Right')]) )
+    #print("\ntesting [((2, 3), 'Left')]")
+    #print( check_macro_action_seq(wh.copy(), [((2, 3), 'Left')]) )
     
 
 if __name__ == "__main__":
@@ -192,9 +196,9 @@ if __name__ == "__main__":
     
 #    print(my_team())  # should print your team
 
-#    test_taboo_cells() 
 #    test_check_elem_action_seq()
-    test_solve_sokoban_elem()
+#    test_solve_sokoban_elem()
+#    test_taboo_cells() 
 #   test_can_go_there()
-#    test_solve_sokoban_macro()   
+    test_solve_sokoban_macro()   
 #    test_check_macro_action_seq()

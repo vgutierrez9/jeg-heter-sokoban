@@ -14,7 +14,7 @@ import itertools
 from itertools import product
 import sokoban
 import math
-
+import copy
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -100,7 +100,10 @@ def taboo_coordinates(warehouse):
 
     #Pair all corners with all other corners and put in list
     all_corner_pairs = itertools.permutations(corners, 2)
-
+    
+    #list of gaps in walls
+    gap = []
+        
     #Check for floor tiles between corners, without targets, and add to taboo list
     #Pull each set of corner pairs
     for corner_pair in all_corner_pairs:
@@ -143,18 +146,19 @@ def taboo_coordinates(warehouse):
                     corner2L = True
                 if cell_in_direction(corner2, "Right") in warehouse.walls:
                     corner2R = True    
-                
-                #if wall on L, check wall on L for a gap
-                if corner1L and corner2L:
-                    gap = [(x,y) for x,y in floor if x == corner1[0]-1 and ((y > taboo_y_min) and (y < taboo_y_max))]
-                #if wall on R, check wall on R for a gap
-                if corner1R and corner2R:
-                    gap = [(x,y) for x,y in floor if x == corner1[0]+1 and ((y > taboo_y_min) and (y < taboo_y_max))]
-                
-                #if no gap in wall(s)   
-                if gap == []:
-                    #add each floor cell between corners to taboo
-                    taboo += [(x,y) for x,y in floor if x == corner_x and ((y > taboo_y_min) and (y < taboo_y_max))]
+                    
+                if (corner1L and corner2L) or (corner1R and corner2R):
+                    #if wall on L, check wall on L for a gap
+                    if corner1L and corner2L:
+                        gap = [(x,y) for x,y in floor if x == corner1[0]-1 and ((y > taboo_y_min) and (y < taboo_y_max))]
+                    #if wall on R, check wall on R for a gap
+                    if corner1R and corner2R:
+                        gap = [(x,y) for x,y in floor if x == corner1[0]+1 and ((y > taboo_y_min) and (y < taboo_y_max))]
+                    
+                    #if no gap in wall(s)   
+                    if gap == []:
+                        #add each floor cell between corners to taboo
+                        taboo += [(x,y) for x,y in floor if x == corner_x and ((y > taboo_y_min) and (y < taboo_y_max))]
 
 
         elif horizontally_aligned(corner_pair[0], corner_pair[1]):
@@ -192,19 +196,20 @@ def taboo_coordinates(warehouse):
                     if cell_in_direction(corner2, "Up") in warehouse.walls:
                         corner2U = True
                     if cell_in_direction(corner2, "Down") in warehouse.walls:
-                        corner2D = True    
-                    
-                    #if wall above, check wall above for a gap
-                    if corner1U and corner2U:
-                        gap = [(x,y) for x,y in floor if y == corner1[1]-1 and ((x > taboo_x_min) and (x < taboo_x_max))]
-                    #if wall below, check wall below for a gap
-                    if corner1D and corner2D:
-                        gap = [(x,y) for x,y in floor if y == corner1[1]+1 and ((x > taboo_x_min) and (x < taboo_x_max))]
-                    
-                    #if no gap in wall(s)   
-                    if gap == []:
-                        #add each floor cell between corners to taboo
-                        taboo += [(x,y) for x,y in floor if y == corner_y and ((x > taboo_x_min) and (x < taboo_x_max))]
+                        corner2D = True  
+                        
+                    if (corner1U and corner2U) or (corner1D and corner2D):
+                        #if wall above, check wall above for a gap
+                        if corner1U and corner2U:
+                            gap = [(x,y) for x,y in floor if y == corner1[1]-1 and ((x > taboo_x_min) and (x < taboo_x_max))]
+                        #if wall below, check wall below for a gap
+                        if corner1D and corner2D:
+                            gap = [(x,y) for x,y in floor if y == corner1[1]+1 and ((x > taboo_x_min) and (x < taboo_x_max))]
+                        
+                        #if no gap in wall(s)   
+                        if gap == []:
+                            #add each floor cell between corners to taboo
+                            taboo += [(x,y) for x,y in floor if y == corner_y and ((x > taboo_x_min) and (x < taboo_x_max))]
     
     return taboo
 
@@ -251,9 +256,9 @@ def is_corner(warehouse, floor_cell):
 
     # return value
 
-#def manhattan_distance(cell_a, cell_b):
- #   return abs(cell_a[0] - cell_b[0]) + abs(cell_a[1] - cell_b[1])
-# end of observable code on this method.
+def manhattan_distance(cell_a, cell_b):
+    return abs(cell_a[0] - cell_b[0]) + abs(cell_a[1] - cell_b[1])
+
 
 #DONE
 def is_next_to_wall(warehouse, cell):
@@ -281,7 +286,7 @@ def cell_in_direction(cell, direction):
     elif direction == "Down":
         return(cell[0], cell[1] + 1)
 
-#DONE
+#DONE - don't need because search returns list of directions
 def get_direction(origin, destination):
    if horizontally_aligned(destination, origin):
       if origin[0] - destination[0] == 1:
@@ -328,6 +333,8 @@ class SokobanPuzzle(search.Problem):
 
         self.wh = warehouse
         self.initial = ((warehouse.worker),) + tuple(warehouse.boxes)
+        self.targets = warehouse.targets
+        self.taboo_list = taboo_coordinates(warehouse)
         
     #DONE
     def actions(self, state):
@@ -349,40 +356,40 @@ class SokobanPuzzle(search.Problem):
         cell_down = cell_in_direction(state[0], "Down")
 
         #if no wall or box on the right, add it to action list
-        if cell_to_right not in self.wh.walls and cell_to_right not in state:
+        if cell_to_right not in self.wh.walls and cell_to_right not in state[1:]:
             OK_actions += ("Right",)
         #if box on right, check it out
-        elif cell_to_right in state:
+        elif cell_to_right in state[1:]:
             #what's on box's right?
             box_right = cell_in_direction(cell_to_right, "Right")
             #if box's right is good, add right to action list
-            if box_right not in taboo_coordinates(self.wh) and box_right not in self.wh.walls and box_right not in state:
+            if box_right not in self.taboo_list and box_right not in self.wh.walls and box_right not in state[1:]:
                 OK_actions += ("Right",)
 
         #if no wall or box on the left, add it to action list
-        if cell_to_left not in self.wh.walls and cell_to_left not in state:
+        if cell_to_left not in self.wh.walls and cell_to_left not in state[1:]:
             OK_actions += ("Left",)
         #if box on left, check it out
-        elif cell_to_left in state:
+        elif cell_to_left in state[1:]:
             #what's on box's left?
             box_left = cell_in_direction(cell_to_left, "Left")
             #if box's left is good, add left to action list
-            if box_left not in taboo_coordinates(self.wh) and box_left not in self.wh.walls and box_left not in state:
+            if box_left not in self.taboo_list and box_left not in self.wh.walls and box_left not in state[1:]:
                 OK_actions += ("Left",)
 
         #exact same thing as above, but for up and down directions
-        if cell_up not in self.wh.walls and cell_up not in state:
+        if cell_up not in self.wh.walls and cell_up not in state[1:]:
             OK_actions += ("Up",)
-        elif cell_up in state:
+        elif cell_up in state[1:]:
             box_up = cell_in_direction(cell_up, "Up")
-            if box_up not in taboo_coordinates(self.wh) and box_up not in self.wh.walls and box_up not in state:
+            if box_up not in self.taboo_list and box_up not in self.wh.walls and box_up not in state[1:]:
                 OK_actions += ("Up",)
 
-        if cell_down not in self.wh.walls and cell_down not in state:
+        if cell_down not in self.wh.walls and cell_down not in state[1:]:
             OK_actions += ("Down",)
-        elif cell_down in state:
+        elif cell_down in state[1:]:
             box_down = cell_in_direction(cell_down, "Down")
-            if box_down not in taboo_coordinates(self.wh) and box_down not in self.wh.walls and box_down not in state:
+            if box_down not in self.taboo_list and box_down not in self.wh.walls and box_down not in state[1:]:
                 OK_actions += ("Down",)
 
         return OK_actions
@@ -444,12 +451,14 @@ class SokobanPuzzle(search.Problem):
 
         return OK_actions
 
-    #DONE
+    #DONE ?
     def result(self, state, action):
         """Return the state that results from executing the given action in the given state. The action must be one of self.actions(state)."""
-        #assert action in self.actions(state)
+        assert action in self.actions(state)
         
-        new_state = state
+        new_state = ()
+        new_state = copy.deepcopy(state)
+        
         #is the cell builder moving to a box?
         if cell_in_direction(state[0], action) in state[1:]:
             i = 1
@@ -476,10 +485,12 @@ class SokobanPuzzle(search.Problem):
             #move the builder to the cell in that direction
             new_state_list[0] = cell_in_direction(state[0], action)
             new_state = tuple(new_state_list)
-        # print(new_state)
-        print(action)
-        print(state)
+
+        new_state = (new_state[0],) + tuple(sorted(new_state[1:]))
+
         print(new_state)
+        
+        
         return new_state
 
    #DONE
@@ -489,17 +500,17 @@ class SokobanPuzzle(search.Problem):
         method if checking against a single self.goal is not enough."""
 
         num_box_on_target = 0
-        
         for box in state[1:]:
-            if box in self.wh.targets:
+            if box in self.targets:
                 num_box_on_target += 1
         
-        if num_box_on_target == len(self.wh.targets):
+        print("Num box on target")
+        print(num_box_on_target)
+        
+        if num_box_on_target == len(state)-1:
             print("GOAL")
-            print (taboo_coordinates(self.wh))
             return True
         else:
-           print("fail")
            return False
 
     def h(self, node):
@@ -512,9 +523,12 @@ class SokobanPuzzle(search.Problem):
         is such that the path doesn't matter, this function will only look at
         state2.  If the path does matter, it will consider c and maybe state1
         and action. The default method costs 1 for every step in the path."""
-        return c + 1
+        for i in range(1, len(state1)-1):
+            if state1[i][0] != state2[i][0] or state1[i][1] != state2[i][1]:
+                return c + 1
+        return c
 
-    #DONE
+    #DONE ?
     def value(self, state):
         """For optimization problems, each state has a value.  Hill-climbing
         and related algorithms try to maximize this value. Returns
@@ -522,44 +536,110 @@ class SokobanPuzzle(search.Problem):
         diagonal distances of each box to its closest target."""
 
         # There must be an equal number of targets and boxes
-        #assert(len(state) == len(state.targets))
+        assert(len(state)-1 == len(self.targets))
 
         value = 0
         first = True
         dist = 0
-        boxes = state[1:]
-        target_list = self.wh.targets
+        boxes = []
+        boxes = copy.deepcopy(state[1:])
+        target_list = []
+        target_list = copy.deepcopy(self.wh.targets)
         min_dist = 0
-        #get each box, one at a time
+        
+        box_targets_dist = []
+        temp_list = []
+        
         for box in boxes:
             #separate the box's x, y coordinates
-            box_x = list(box)[0]
-            box_y = list(box)[1]
-            #box_x, box_y = zip(*box)
-            #get each target one at a time and find the distance to the target that is closest to the box
+            box_x = box[0]
+            box_y = box[1]
             for target in target_list:
                 #separate the target's x,y coordinates
-                target_x = list(target)[0]
-                target_y = list(target)[1]
-                #target_x, target_y = zip(*target)
+                target_x = target[0]
+                target_y = target[1]
+                
                 #find the diagonal distance (via hypotenus)
-                dist = math.sqrt((box_x - target_x)**2 + (box_y - target_y)**2 )
-                #if first target, save that distance as minimum distance
-                if first:
-                    min_dist = dist
-                    first = False
-                #Save distance as minimum distance if it is less than the existing minimum distance
-                elif dist < min_dist:
-                    min_dist = dist
-                    target_list.remove(target)
-            #add the minimum distance for each box to value
+                dist = math.sqrt((box_x - target_x)**2 + (box_y - target_y)**2)
+                #dist = manhattan_distance(box, target)
+                
+                temp_list += box
+                temp_list += target
+                temp_list += [dist,]
+                #print("Temp list:")
+                #print(temp_list)
+                box_targets_dist += [temp_list,]
+                temp_list = []
+                #print("box_targets_dist")
+                #print(box_targets_dist)
+                
+        while box_targets_dist:
+            temp_trio = box_targets_dist[0]
+            
+            for i in range(0, len(box_targets_dist)):
+                if i == 0:
+                    min_dist = box_targets_dist[0][4]
+                if box_targets_dist[i][4] < min_dist:
+                    min_dist = box_targets_dist[i][4]
+                    temp_trio = box_targets_dist[i] 
+                    
             value += min_dist
-
+            #print("min trio")
+            #print(temp_trio)
+            
+            i = 0
+            while i < len(box_targets_dist):
+                trio = box_targets_dist[i]
+                if (trio[0] == temp_trio[0] and trio[1] == temp_trio[1]) or (trio[2] == temp_trio[2] and trio[3] == temp_trio[3]):
+                    box_targets_dist.remove(trio)
+                    i -= 1
+                i += 1
+            
+            #print("box tag dist minus")
+            #print(box_targets_dist)
+            
+            min_buildr_dist = math.sqrt((boxes[0][0] - state[0][0])**2 + (boxes[0][1] - state[0][1])**2)
+            for box in boxes:
+                #separate the box's x, y coordinates
+                box_x = box[0]
+                box_y = box[1]
+                
+                temp_dist = math.sqrt((box_x - state[0][0])**2 + (box_y - state[0][1])**2)
+                if temp_dist < min_buildr_dist:
+                    min_buildr_dist = temp_dist
+            
+            value += min_buildr_dist
+            
         return value
+        
+        # #get each box, one at a time
+        # for box in boxes:
+            # #separate the box's x, y coordinates
+            # box_x = box[0]
+            # box_y = box[1]
+            # #get each target one at a time and find the distance to the target that is closest to the box
+            # for target in target_list:
+                # #separate the target's x,y coordinates
+                # target_x = target[0]
+                # target_y = target[1]
+                # #find the diagonal distance (via hypotenus)
+                # dist = math.sqrt((box_x - target_x)**2 + (box_y - target_y)**2)
+                # #if first target, save that distance as minimum distance
+                # if first:
+                    # min_dist = dist
+                    # first = False
+                # #Save distance as minimum distance if it is less than the existing minimum distance
+                # elif dist < min_dist:
+                    # min_dist = dist
+                    # target_list.remove(target)
+            # #add the minimum distance for each box to value
+            # value += min_dist
+
+        # return value
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 #DONE
-def check_taboo_aallowed_action_seq(warehouse, action_seq):
+def check_taboo_allowed_action_seq(warehouse, action_seq):
     '''
     Determine if the sequence of actions listed in 'action_seq' is legal or not.
 
@@ -658,6 +738,8 @@ def solve_sokoban_elem(warehouse):
         return []
     #turn list of coordinates into list of strings
     else:
+        print("Solution")
+        print(path.solution())
         return path.solution()
     
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -739,13 +821,28 @@ def solve_sokoban_macro(warehouse):
         Otherwise return M a sequence of macro actions that solves the puzzle.
         If the puzzle is already in a goal state, simply return []
     '''
-    # skp = SokobanPuzzle(warehouse)
-    # string_directions = solve_sokoban_elem(warehouse)
+    skp = SokobanPuzzle(warehouse)
     
-    # macro_directions = []
-    # worker_position = warehouse.worker
+    if skp.goal_test(skp.initial):
+        return []
+        
+    string_directions = solve_sokoban_elem(warehouse)
+    print(string_directions)
+    if not string_directions:
+        return ['Impossible']
     
-    # for direction in string_directions:
-        # if cell_in_direction(worker_position, direction) in skp.
+    macro_directions = []
+    temp_state = skp.initial
+    
+    #go through each elementary action and look for actions that move boxes, add those actions to macro list
+    for direction in string_directions:
+        print(direction)
+        if cell_in_direction(temp_state[0], direction) in temp_state[1:]:
+            macro_move = tuple(list((cell_in_direction(temp_state[0], direction),) + (direction,)))
+            macro_directions += [macro_move,]
+        temp_state = skp.result(temp_state, direction)
+    print("Macro")
+    print(macro_directions)
+    return macro_directions
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
