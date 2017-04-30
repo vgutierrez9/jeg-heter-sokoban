@@ -1,751 +1,300 @@
+#!/usr/bin/env python
 
-'''
-
-The partially defined functions and classes of this module
-will be called by a marker script.
-
-You should complete the functions and classes according to their specified interfaces.
-
-
-'''
-
-import search
-import itertools
-from itertools import product
-import sokoban
-import math
+# For compatibility with Python 2.7
+# A future statement is a directive to the compiler that a particular module 
+# should be compiled using syntax or semantics that will be available in a 
+# specified future release of Python.
+# The future statement is intended to ease migration to future versions of 
+# Python that introduce incompatible changes to the language. It allows use 
+# of the new features on a per-module basis before the release in which the 
+# feature becomes standard.
+from __future__ import print_function
+from __future__ import division
 
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-#DONE
-def my_team():
-    '''
-    Return the list of the team members of this assignment submission as a list
-    of triplet of the form (student_number, first_name, last_name)
-
-    '''
-    return [ (9890394, 'Vanessa', 'Gutierrez'), (9884050, 'Glenn', 'Christensen'), (9884076, 'Marius', 'Imingen') ]
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-#DONE
-def taboo_cells(warehouse):
-    '''
-    Identify the taboo cells of a warehouse. A cell is called 'taboo'
-    if whenever a box get pushed on such a cell then the puzzle becomes unsolvable.
-    When determining the taboo cells, you must ignore all the existing boxes,
-    simply consider the walls and the target  cells.
-    Use only the following two rules to determine the taboo cells;
-     Rule 1: if a cell is a corner and not a target, then it is a taboo cell.
-     Rule 2: all the cells between two corners along a wall are taboo if none of
-             these cells is a target.
-
-    @param warehouse: a Warehouse object
-
-    @return
-       A string representing the puzzle with only the wall cells marked with
-       an '#' and the taboo cells marked with an 'X'.
-       The returned string should NOT have marks for the worker, the targets,
-       and the boxes.
-    '''
-
-    coordinate_list = taboo_coordinates(warehouse)
-
-    X,Y = zip(*warehouse.walls)
-    x_size, y_size = 1+max(X), 1+max(Y)
-
-    vis = [[" "] * x_size for y in range(y_size)]
-    for (x,y) in warehouse.walls:
-        vis[y][x] = "#"
-    for (x,y) in coordinate_list:
-        vis[y][x] = "X"
-
-    return "\n".join(["".join(line) for line in vis])
-
-#DONE
-def taboo_coordinates(warehouse):
-    '''
-    Identify the coordinates of the taboo cells of a warehouse. A cell is called 'taboo'
-    if whenever a box get pushed on such a cell then the puzzle becomes unsolvable.
-    When determining the taboo cells, you must ignore all the existing boxes,
-    simply consider the walls and the target  cells.
-    Use only the following two rules to determine the taboo cells;
-     Rule 1: if a cell is a corner and not a target, then it is a taboo cell.
-     Rule 2: all the cells between two corners along a wall are taboo if none of
-             these cells is a target.
-
-    @param warehouse: a Warehouse object
-
-    @return
-       A list containing the coordinates for all the taboo cell
-    '''
-    # Get map dimensions
-    X,Y = zip(*warehouse.walls)
-    x_size, y_size = 1 + max(X), 1 + max(Y)
-
-    # Get all map coordinates
-    all_possible_coordinates = list(itertools.product(range(x_size), range(y_size)))
-
-    # Get all floor (non-wall) tiles
-
-    floor = [coordinate for coordinate in all_possible_coordinates if coordinate not in warehouse.walls]
-    floor_next_to_wall = [coordinate for coordinate in all_possible_coordinates if is_next_to_wall(warehouse, coordinate)]
-
-    # Get all corner tiles
-    corners = [(x,y) for x,y in floor if is_corner(warehouse, (x,y))]
-
-    # Add non-target corners to taboo cells
-    taboo = [(x,y) for x,y in corners if (x,y) not in warehouse.targets]
-
-    #Pair all corners with all other corners and put in list
-    all_corner_pairs = itertools.permutations(corners, 2)
-
-    #Check for floor tiles between corners, without targets, and add to taboo list
-    #Pull each set of corner pairs
-    for corner_pair in all_corner_pairs:
-        #Check if those corners are in same column
-        if vertically_aligned(corner_pair[0], corner_pair[1]):
-            #Find which are the min and max y values
-            if corner_pair[0][1] < corner_pair[1][1]:
-                taboo_y_min = corner_pair[0][1]
-                taboo_y_max = corner_pair[1][1]
-            else:
-                taboo_y_min = corner_pair[1][1]
-                taboo_y_max = corner_pair[0][1]
-
-            target_between_corners = False
-            #Check if any targets are between the corners
-            for target in warehouse.targets:
-                if vertically_aligned(corner_pair[0], target) and ((target[1] > taboo_y_min) or (target[1] < taboo_y_max)):
-                    target_between_corners = True
-                    break
-                    
-            #if no target between corners, check for gaps in walls 
-            if not target_between_corners:
-            
-                corner_x = corner_pair[0][0]
-                corner1 = corner_pair[0]
-                corner2 = corner_pair[1]
-                
-                #Will be marked true if corner (1/2) has wall on that side (R/L)
-                corner1L = False
-                corner1R = False
-                corner2L = False
-                corner2R = False
-                
-                #check for walls on sides of corners
-                if cell_in_direction(corner1, "Left") in warehouse.walls:
-                    corner1L = True
-                if cell_in_direction(corner1, "Right") in warehouse.walls:
-                    corner1R = True
-                if cell_in_direction(corner2, "Left") in warehouse.walls:
-                    corner2L = True
-                if cell_in_direction(corner2, "Right") in warehouse.walls:
-                    corner2R = True    
-                
-                #if wall on L, check wall on L for a gap
-                if corner1L and corner2L:
-                    gap = [(x,y) for x,y in floor if x == corner1[0]-1 and ((y > taboo_y_min) and (y < taboo_y_max))]
-                #if wall on R, check wall on R for a gap
-                if corner1R and corner2R:
-                    gap = [(x,y) for x,y in floor if x == corner1[0]+1 and ((y > taboo_y_min) and (y < taboo_y_max))]
-                
-                #if no gap in wall(s)   
-                if gap == []:
-                    #add each floor cell between corners to taboo
-                    taboo += [(x,y) for x,y in floor if x == corner_x and ((y > taboo_y_min) and (y < taboo_y_max))]
-
-
-        elif horizontally_aligned(corner_pair[0], corner_pair[1]):
-            #Find which are the min and max x values
-            if corner_pair[0][0] < corner_pair[1][0]:
-                taboo_x_min = corner_pair[0][0]
-                taboo_x_max = corner_pair[1][0]
-            else:
-                taboo_x_min = corner_pair[1][0]
-                taboo_x_max = corner_pair[0][0]
-
-                target_between_corners = False
-                #Check if any targets are between the corners
-                for target in warehouse.targets:
-                    if horizontally_aligned(corner_pair[0], target) and ((target[0] > taboo_x_min) or (target[0] < taboo_x_max)):
-                        target_between_corners = True
-                        break
-                if not target_between_corners:
-                    corner_y = corner_pair[0][1]
-                    
-                    corner1 = corner_pair[0]
-                    corner2 = corner_pair[1]
-                    
-                    #Will be marked true if corner (1/2) has wall on that side (Up/Down)
-                    corner1U = False
-                    corner1D = False
-                    corner2U = False
-                    corner2D = False
-                    
-                    #check for walls on sides of corners
-                    if cell_in_direction(corner1, "Up") in warehouse.walls:
-                        corner1U = True
-                    if cell_in_direction(corner1, "Down") in warehouse.walls:
-                        corner1D = True
-                    if cell_in_direction(corner2, "Up") in warehouse.walls:
-                        corner2U = True
-                    if cell_in_direction(corner2, "Down") in warehouse.walls:
-                        corner2D = True    
-                    
-                    #if wall above, check wall above for a gap
-                    if corner1U and corner2U:
-                        gap = [(x,y) for x,y in floor if y == corner1[1]-1 and ((x > taboo_x_min) and (x < taboo_x_max))]
-                    #if wall below, check wall below for a gap
-                    if corner1D and corner2D:
-                        gap = [(x,y) for x,y in floor if y == corner1[1]+1 and ((x > taboo_x_min) and (x < taboo_x_max))]
-                    
-                    #if no gap in wall(s)   
-                    if gap == []:
-                        #add each floor cell between corners to taboo
-                        taboo += [(x,y) for x,y in floor if y == corner_y and ((x > taboo_x_min) and (x < taboo_x_max))]
+try:
+    import Tkinter as tk
+    from tkFileDialog import askopenfilename
+except ImportError:
+    import tkinter as tk
+    from tkinter.filedialog import askopenfilename
     
-    return taboo
+import os
 
-#DONE
-def is_corner(warehouse, floor_cell):
-    x,y = floor_cell[0], floor_cell[1]
-    #if in a lower right hand corner
-    if (x + 1,y) in warehouse.walls and (x, y + 1) in warehouse.walls:
-        return True
-    if (x - 1,y) in warehouse.walls and (x, y + 1) in warehouse.walls:
-        return True
-    if (x - 1,y) in warehouse.walls and (x, y - 1) in warehouse.walls:
-        return True
-    if (x + 1,y) in warehouse.walls and (x, y - 1) in warehouse.walls:
-        return True
+from sokoban import Warehouse
 
-    return False
+# Written by f.maire@qut.edu.au using icon images from Risto Stevcev.
+# Last modified on 2015/03/16
 
-#def get_dist_to_closest_cell(origin, cells):
-    #min_distance = 0
-    #if len(cells) > 0:
-   #     min_distance = manhattan_distance(origin, cells[0])
-
-        #for cell in cells:
-# end of observable code on this method.
-
-#def get_hungarian_assignment(boxes, targets):
-    # # There must be an equal number of targets and boxes
-    # assert(len(boxes) == len(targets))
-    # value = 0
-    # first = True
-    # dist = 0
-    # for box in boxes:
-        # box_x, box_y = zip(*box)
-        # for target in targets:
-            # target_x, target_y = zip(*target)
-            # dist = math.sqrt((box_x - target_x)**2 + (box_y - target_y)**2 )
-            # if first:
-                # min_dist = dist
-                # first = False
-            # elif dist < min_dist:
-                # min_dist = dist
-        # value += min_dist
-
-    # return value
-
-#def manhattan_distance(cell_a, cell_b):
- #   return abs(cell_a[0] - cell_b[0]) + abs(cell_a[1] - cell_b[1])
-# end of observable code on this method.
-
-#DONE
-def is_next_to_wall(warehouse, cell):
-    x,y = cell[0], cell[1]
-    if ((x + 1, y) in warehouse.walls or (x - 1, y) in warehouse.walls or (x, y + 1) in warehouse.walls or (x, y - 1) in warehouse.walls):
-        return True
-    else:
-        return False
-
-#did we use?
-# def next_to(cell_a, cell_b):
-    # if(abs(cell_a[0] - cell_b[0])) == 1 or abs(cell_a[1] - cell_b[1]) == 1:
-        # return True
-    # return False
+# todo: documentation!!
+#       stepping function?
 
 
-#DONE
-def cell_in_direction(cell, direction):
-    if direction == "Left":
-        return(cell[0] - 1, cell[1])
-    elif direction == "Right":
-        return(cell[0] + 1, cell[1])
-    elif direction == "Up":
-        return(cell[0], cell[1] - 1)
-    elif direction == "Down":
-        return(cell[0], cell[1] + 1)
+__author__ = "Frederic Maire"
+__version__ = "1.2"
 
-#DONE
-def get_direction(origin, destination):
-   if horizontally_aligned(destination, origin):
-      if origin[0] - destination[0] == 1:
-         return "Left"
-      elif origin[0] - destination[0] == -1:
-         return "Right"
-      else:
-         return "Destination cell is too far away to be reached in one left or right movement."
-   elif vertically_aligned(destination, origin):
-      if origin[1] - destination[1] == 1:
-         return "Up"
-      elif origin[1] - destination[1] == -1:
-         return "Down"
-      else:
-         return "Destination cell is too far away to be reached in one up or down movement."
-   else:
-      return "Destination cell cannot be reached in one up, down, left or right movement from origin."
+#if not __package__:
+#    __package__ = "CAB320_sokoban"
+
+# Directory where this file is located
+_ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
-#DONE
-def horizontally_aligned(cell_a, cell_b):
-    if cell_a[1] == cell_b[1]:
-        return True
+class Menu(object):
+    def __init__(self, app):
+        self.app = app
+    def OpenFile(self):
+        self.app.grid_forget()
+        self.app.level_file_name = askopenfilename(initialdir=os.path.join(_ROOT, 'warehouses'))
+        print ('\n self.app.level_file_name ', self.app.level_file_name, '\n')
+        self.app.start_level()
+    def About(self):
+        AboutDialog()
 
-#DONE
-def vertically_aligned(cell_a, cell_b):
-    if cell_a[0] == cell_b[0]:
-        return True
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+class AboutDialog(tk.Frame):
+    def __init__(self, master=None):
+        tk.Frame.__init__(self, master)
+        self = tk.Toplevel()
+        self.title("About")
+
+        info = tk.Label(self, text="Sokoban v%s - by %s" % ( __version__, __author__))
+        info.grid(row=0)
+
+        self.ok_button = tk.Button(self, text="OK", command=self.destroy)
+        self.ok_button.grid(row=1)
 
 
-class SokobanPuzzle(search.Problem):
-    '''
-    Class to represent a Sokoban puzzle.
-    Your implementation should be compatible with the
-    search functions of the provided module 'search.py'.
+class CompleteDialog(tk.Frame):
+    def __init__(self, master=None):
+        tk.Frame.__init__(self, master)
+        self = tk.Toplevel()
+        self.title("Puzzle solved")
 
-        Use the sliding puzzle and the pancake puzzle for inspiration!
+        info = tk.Label(self, text=("Congratulations, you have solved the puzzle!"))
+        info.grid(row=0)
 
-    '''
-    #DONE
-    def __init__(self, warehouse):
+        self.ok_button = tk.Button(self, text="OK", command=self.destroy)
+        self.ok_button.grid(row=1)
 
-        self.wh = warehouse
-        self.initial = ((warehouse.worker),) + tuple(warehouse.boxes)
+# hole is a synonym  for target
+# crate is a synonym  for box
+
+##image_dict={} # 'wall':tk.PhotoImage(file=os.path.join(_ROOT, 'images/wall.gif'))}
+
+
+##    self.level[row][column - 1] is not warehouse_symbol['wall']
+
+class Application(tk.Frame):
+    def __init__(self, master=None):
+        tk.Frame.__init__(self, master)
+        self.grid()
+        self.configure(background="black")
+        self.master.title("Sokoban v%s" % (__version__))
+        self.master.resizable(0,0)
+        self.image_dict={'wall':tk.PhotoImage(file=os.path.join(_ROOT, 'images/wall.gif')),
+                         'target':tk.PhotoImage(file=os.path.join(_ROOT, 'images/hole.gif')),
+                         'box_on_target':tk.PhotoImage(file=os.path.join(_ROOT, 'images/crate-in-hole.gif')),
+                         'box':tk.PhotoImage(file=os.path.join(_ROOT, 'images/crate.gif')),
+                         'worker':tk.PhotoImage(file=os.path.join(_ROOT, 'images/player.gif')),
+                         'smiley':tk.PhotoImage(file=os.path.join(_ROOT, 'images/smiley.gif')),
+                         'worker_on_target':tk.PhotoImage(file=os.path.join(_ROOT, 'images/player-in-hole.gif')),
+                         }
+        icon = self.image_dict['box']
+        self.warehouse_symbol =  { 'wall':'#' , 'target':'.' , 'box_on_target': '*' , 'box':'$'
+                                   , 'worker':'@', 'worker_on_target': '!', 'floor' : ' '}
+        self.direction_offset = {'Left' :(-1,0), 'Right':(1,0) , 'Up':(0,-1), 'Down':(0,1)} # (x,y) = (column,row)
+     
+        self.master.tk.call('wm', 'iconphoto', self.master._w, icon)
+        self.create_menu()
+
+        self.DEFAULT_SIZE = 200
+        self.frame = tk.Frame(self, height=self.DEFAULT_SIZE, width=self.DEFAULT_SIZE)
+        self.frame.grid()
+        self.default_frame()
+        self.cells={} # dict with key (x,y) and value Label widget to keep track of the Labels in the grid
+        self.level_file_name = None 
+        self.warehouse = Warehouse()
+
+
         
-    #DONE
-    def actions(self, state):
-        """
-        Return the list of actions that can be executed in the given state
-        if these actions put the builder into an empty space and
-        do not push a box in a taboo cell, a wall, or into another box.
-        The actions must belong to the list ['Left', 'Down', 'Right', 'Up']
-        NO TABOO!!!!!!!!!!!!!!
-        """
-        #print("in actions")
-        #print(self.wh.walls)
-        OK_actions = []
+    def key(self, event):
+        if event.keysym in ('Left', 'Right', 'Up', 'Down'): 
+            self.move_player(event.keysym)
+        if event.keysym in ('r','R'):
+            self.restart_level()
 
-        #get cells in each direction
-        cell_to_right = cell_in_direction(state[0], "Right")
-        cell_to_left = cell_in_direction(state[0], "Left")
-        cell_up = cell_in_direction(state[0], "Up")
-        cell_down = cell_in_direction(state[0], "Down")
+    def create_menu(self):
+        root = self.master
+        menu = tk.Menu(root)
+        user_menu = Menu(self)
+        root.config(menu=menu)
 
-        #if no wall or box on the right, add it to action list
-        if cell_to_right not in self.wh.walls and cell_to_right not in state:
-            OK_actions += ("Right",)
-        #if box on right, check it out
-        elif cell_to_right in state:
-            #what's on box's right?
-            box_right = cell_in_direction(cell_to_right, "Right")
-            #if box's right is good, add right to action list
-            if box_right not in taboo_coordinates(self.wh) and box_right not in self.wh.walls and box_right not in state:
-                OK_actions += ("Right",)
+        file_menu = tk.Menu(menu)
+        menu.add_cascade(label="File", menu=file_menu)
+        file_menu.add_command(label="Restart", command=self.restart_level)
+        file_menu.add_command(label="Open...", command=user_menu.OpenFile)
+        file_menu.add_separator()
+        file_menu.add_command(label="Exit", command=menu.quit)
 
-        #if no wall or box on the left, add it to action list
-        if cell_to_left not in self.wh.walls and cell_to_left not in state:
-            OK_actions += ("Left",)
-        #if box on left, check it out
-        elif cell_to_left in state:
-            #what's on box's left?
-            box_left = cell_in_direction(cell_to_left, "Left")
-            #if box's left is good, add left to action list
-            if box_left not in taboo_coordinates(self.wh) and box_left not in self.wh.walls and box_left not in state:
-                OK_actions += ("Left",)
+        help_menu = tk.Menu(menu)
+        menu.add_cascade(label="Help", menu=help_menu)
+        help_menu.add_command(label="About", command=user_menu.About)
 
-        #exact same thing as above, but for up and down directions
-        if cell_up not in self.wh.walls and cell_up not in state:
-            OK_actions += ("Up",)
-        elif cell_up in state:
-            box_up = cell_in_direction(cell_up, "Up")
-            if box_up not in taboo_coordinates(self.wh) and box_up not in self.wh.walls and box_up not in state:
-                OK_actions += ("Up",)
+    def default_frame(self):
+        start_width = 50
+        start_label = tk.Label(self.frame, text="\n *** Welcome to Sokoban! ***\n", width=start_width)
+        start_label.grid(row=0, column=0)
 
-        if cell_down not in self.wh.walls and cell_down not in state:
-            OK_actions += ("Down",)
-        elif cell_down in state:
-            box_down = cell_in_direction(cell_down, "Down")
-            if box_down not in taboo_coordinates(self.wh) and box_down not in self.wh.walls and box_down not in state:
-                OK_actions += ("Down",)
+        start_label2 = tk.Label(self.frame, text="To play: File -> Open\n", width=start_width)
+        start_label2.grid(row=1, column=0)
 
-        return OK_actions
+        start_label3 = tk.Label(self.frame, text="To reset current warehouse: press the 'r' key \n", width=start_width)
+        start_label3.grid(row=3, column=0)
 
-    #DONE
-    def taboo_allowed_actions(self, state):
-        """
-        Return the list of actions that can be executed in the given state
-        if these actions put the builder in an empty space or
-        do not push a box in a wall, or into another box.
-        Does not care if box is pushed to taboo space!!!!!!!!!!
-        The actions must belong to the list ['Left', 'Down', 'Right', 'Up']
-        """
+    def clear_level(self):
+        self.frame.destroy()
+        self.frame = tk.Frame(self)
+        self.frame.grid()
+        self.warehouse = Warehouse() # warehouse
+        self.cells = {}
 
-        OK_actions = ()
-
-        #get cells in each direction
-        cell_to_right = cell_in_direction(state[0], "Right")
-        cell_to_left = cell_in_direction(state[0], "Left")
-        cell_up = cell_in_direction(state[0], "Up")
-        cell_down = cell_in_direction(state[0], "Down")
-
-        #if no wall or box on the right, add it to action list
-        if cell_to_right not in self.wh.walls and cell_to_right not in state:
-            OK_actions += ("Right",)
-        #if box on right, check it out
-        elif cell_to_right in state:
-            #what's on box's right?
-            box_right = cell_in_direction(cell_to_right, "Right")
-            #if box's right is good, add right to action list
-            if box_right not in self.wh.walls and box_right not in state:
-                OK_actions += ("Right",)
-
-        #if no wall or box on the left, add it to action list
-        if cell_to_left not in self.wh.walls and cell_to_left not in state:
-            OK_actions += ("Left",)
-        #if box on left, check it out
-        elif cell_to_left in state:
-            #what's on box's left?
-            box_left = cell_in_direction(cell_to_left, "Left")
-            #if box's left is good, add left to action list
-            if box_left not in self.wh.walls and box_left not in state:
-                OK_actions += ("Left",)
-
-        #exact same thing as above, but for up and down directions
-        if cell_up not in self.wh.walls and cell_up not in state:
-            OK_actions += ("Up",)
-        elif cell_up in state:
-            box_up = cell_in_direction(cell_up, "Up")
-            if box_up not in self.wh.walls and box_up not in state:
-                OK_actions += ("Up",)
-
-        if cell_down not in self.wh.walls and cell_down not in state:
-            OK_actions += ("Down",)
-        elif cell_down in state:
-            box_down = cell_in_direction(cell_down, "Down")
-            if box_down not in self.wh.walls and box_down not in state:
-                OK_actions += ("Down",)
-
-        return OK_actions
-
-    #DONE
-    def result(self, state, action):
-        """Return the state that results from executing the given action in the given state. The action must be one of self.actions(state)."""
-        #assert action in self.actions(state)
+    def start_level(self):
+        self.clear_level()
+        self.warehouse.read_warehouse_file(self.level_file_name)
+        self.master.title("Sokoban v%s - %s" % ( __version__, self.level_file_name.split("/")[-1]))
+        self.fresh_display()
         
-        new_state = state
-        #is the cell builder moving to a box?
-        if cell_in_direction(state[0], action) in state[1:]:
-            i = 1
-            #find which box
-            for box in state[1:]:
-                #if we find the box that builder is moving to
-                if cell_in_direction(state[0], action) == box:
-                    new_state_list = list(new_state)
-                    
-                    #move the box one space in the direction
-                    new_state_list[i] = cell_in_direction(box, action)
-                    
-                    new_state = tuple(new_state_list)
-                    break
-                i+=1
-
-            new_state_list = list(new_state)
-            #move the builder to the cell in that direction (where the box was)
-            new_state_list[0] = cell_in_direction(state[0], action)
-            new_state = tuple(new_state_list)
-
-        else:
-            new_state_list = list(new_state)
-            #move the builder to the cell in that direction
-            new_state_list[0] = cell_in_direction(state[0], action)
-            new_state = tuple(new_state_list)
-        # print(new_state)
-        print(action)
-        print(state)
-        print(new_state)
-        return new_state
-
-   #DONE
-    def goal_test(self, state):
-        """Return True if the state is a goal. The default method compares the
-        state to self.goal, as specified in the constructor. Override this
-        method if checking against a single self.goal is not enough."""
-
-        num_box_on_target = 0
-        
-        for box in state[1:]:
-            if box in self.wh.targets:
-                num_box_on_target += 1
-        
-        if num_box_on_target == len(self.wh.targets):
-            print("GOAL")
-            print (taboo_coordinates(self.wh))
-            return True
-        else:
-           print("fail")
-           return False
-
-    def h(self, node):
-    
-        return self.value(node.state)
-        
-    def path_cost(self, c, state1, action, state2):
-        """Return the cost of a solution path that arrives at state2 from
-        state1 via action, assuming cost c to get up to state1. If the problem
-        is such that the path doesn't matter, this function will only look at
-        state2.  If the path does matter, it will consider c and maybe state1
-        and action. The default method costs 1 for every step in the path."""
-        return c + 1
-
-    #DONE
-    def value(self, state):
-        """For optimization problems, each state has a value.  Hill-climbing
-        and related algorithms try to maximize this value. Returns
-        the value of the state passed to it as a sum of all the
-        diagonal distances of each box to its closest target."""
-
-        # There must be an equal number of targets and boxes
-        #assert(len(state) == len(state.targets))
-
-        value = 0
-        first = True
-        dist = 0
-        boxes = state[1:]
-        target_list = self.wh.targets
-        min_dist = 0
-        #get each box, one at a time
-        for box in boxes:
-            #separate the box's x, y coordinates
-            box_x = list(box)[0]
-            box_y = list(box)[1]
-            #box_x, box_y = zip(*box)
-            #get each target one at a time and find the distance to the target that is closest to the box
-            for target in target_list:
-                #separate the target's x,y coordinates
-                target_x = list(target)[0]
-                target_y = list(target)[1]
-                #target_x, target_y = zip(*target)
-                #find the diagonal distance (via hypotenus)
-                dist = math.sqrt((box_x - target_x)**2 + (box_y - target_y)**2 )
-                #if first target, save that distance as minimum distance
-                if first:
-                    min_dist = dist
-                    first = False
-                #Save distance as minimum distance if it is less than the existing minimum distance
-                elif dist < min_dist:
-                    min_dist = dist
-                    target_list.remove(target)
-            #add the minimum distance for each box to value
-            value += min_dist
-
-        return value
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-#DONE
-def check_taboo_aallowed_action_seq(warehouse, action_seq):
-    '''
-    Determine if the sequence of actions listed in 'action_seq' is legal or not.
-
-    Important notes:
-      - a legal sequence of actions does not necessarily solve the puzzle.
-      - an action is legal even if it pushes a box onto a taboo cell.
-      
-        ***AN ACTION IS LEGAL EVEN IF IT PUSHES A BOX INTO A TABOO CELL***
-        
-    @param warehouse: a valid Warehouse object
-
-    @param action_seq: a sequence of legal actions.
-           For example, ['Left', 'Down', Down','Right', 'Up', 'Down']
-
-    @return
-        The string 'Failure', if one of the action was not successul.
-           For example, if the agent tries to push two boxes at the same time,
-                        or push one box into a wall.
-        Otherwise, if all actions were successful, return
-               A string representing the state of the puzzle after applying
-               the sequence of actions.  This must be the same string as the
-               string returned by the method  Warehouse.__str__()
-    '''
-
-    skp = SokobanPuzzle(warehouse)
-    temp_state = skp.initial
-    for direction in action_seq:
-        if direction in skp.legal_actions(temp_state):
-            temp_state = skp.result(temp_state, direction)
-        else:
-            return "Failure"
-
-    skp.wh.worker = temp_state[0]
-    skp.wh.boxes = temp_state[1:]
-
-    return skp.wh.__str__()
-
-#DONE
-def check_action_seq(warehouse, action_seq):
-    '''
-    Check if action sequence is norwegian legal if calling action accounting for taboo cells
-    Determine if the sequence of actions listed in 'action_seq' is legal or not.
-
-    ***AN ACTION IS NOT LEGAL IF IT PUSHES A BOX INTO A TABOO CELL***
-    
-    @param warehouse: a valid Warehouse object
-
-    @param action_seq: a sequence of legal actions.
-           For example, ['Left', 'Down', Down','Right', 'Up', 'Down']
-
-    @return
-        The string 'Failure', if one of the action was not successul.
-           For example, if the agent tries to push two boxes at the same time,
-                        or push one box into a wall, OR PUSH A BOX INTO A TABOO SPOT.
-        Otherwise, if all actions were successful, return
-               A string representing the state of the puzzle after applying
-               the sequence of actions.  This must be the same string as the
-               string returned by the method  Warehouse.__str__()
-    '''
-    skp = SokobanPuzzle(warehouse)
-    temp_state = skp.initial
-    for direction in action_seq:
-        if direction in skp.actions(temp_state):
-            temp_state = skp.result(temp_state, direction)
-        else:
-            return "Failure"
-
-    skp.wh.worker = temp_state[0]
-    skp.wh.boxes = temp_state[1:]
-
-    return skp.wh.__str__()
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-def solve_sokoban_elem(warehouse):
-    '''
-    This function should solve using elementary actions
-    the puzzle defined in a file.
-
-    @param warehouse: a valid Warehouse object
-
-    @return
-        A list of strings.
-        If puzzle cannot be solved return ['Impossible']
-        If a solution was found, return a list of elementary actions that solves
-            the given puzzle coded with 'Left', 'Right', 'Up', 'Down'
-            For example, ['Left', 'Down', Down','Right', 'Up', 'Down']
-            If the puzzle is already in a goal state, simply return []
-           
-    '''
-    skp = SokobanPuzzle(warehouse)
-    #SEARCH
-    path = search.astar_graph_search(skp)
-    
-    if not path:
-        return []
-    #turn list of coordinates into list of strings
-    else:
-        return path.solution()
-    
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-#DONE!!!!!
-def can_go_there(warehouse, dst):
-    '''
-    Determine whether the worker can walk to the cell dst=(row,col)
-    without pushing any box.
-
-    @param warehouse: a valid Warehouse object
-
-    @return
-      True if the worker can walk to cell dst=(row,col) without pushing any box
-      False otherwise
-    '''
-
-    X,Y = zip(*warehouse.walls)
-    #get the maximum values of the x,y coordinates that are in the warehouse
-    x_size, y_size = 1 + max(X), 1 + max(Y)
-    
-    #is worker already in goal coordinate - return true
-    if warehouse.worker == dst:
-        return True
-    else:
-        explored = []
-        #add starting position expanded directions to frontier
-        frontier = [warehouse.worker,]
-        
-        for cell in frontier:
-            #check if cell being explored is valid (not a wall, box, explored or out of bounds)
-            if cell not in warehouse.walls and cell not in warehouse.boxes and cell not in explored and cell[0] > 0 and cell[0] < x_size and cell[1] > 0 and cell[1] < y_size:
-                
-                #check if the cell is the goal coordinate, if so stop searching and return true
-                if tuple(cell) == dst:                 
-                    return True
-                
-                #expand cell in each direction and add the valid results cells to frontier
-                cell_temp = cell_in_direction(cell, "Up")
-                if cell_temp not in warehouse.walls and cell_temp not in warehouse.boxes and cell_temp not in explored and cell_temp[0] > 0 and cell_temp[0] < x_size and cell_temp[1] > 0 and cell_temp[1] < y_size:
-                    frontier +=  [list(cell_in_direction(cell, "Up")),] 
-
-                cell_temp = cell_in_direction(cell, "Down")
-                if cell_temp not in warehouse.walls and cell_temp not in warehouse.boxes and cell_temp not in explored and cell_temp[0] > 0 and cell_temp[0] < x_size and cell_temp[1] > 0 and cell_temp[1] < y_size:
-                    frontier += [list(cell_in_direction(cell, "Down")),] 
  
-                cell_temp = cell_in_direction(cell, "Left")
-                if cell_temp not in warehouse.walls and cell_temp not in warehouse.boxes and cell_temp not in explored and cell_temp[0] > 0 and cell_temp[0] < x_size and cell_temp[1] > 0 and cell_temp[1] < y_size:
-                    frontier += [list(cell_in_direction(cell, "Left")),]                      
-                    
-                cell_temp = cell_in_direction(cell, "Right")
-                if cell_temp not in warehouse.walls and cell_temp not in warehouse.boxes and cell_temp not in explored and cell_temp[0] > 0 and cell_temp[0] < x_size and cell_temp[1] > 0 and cell_temp[1] < y_size:
-                    frontier += [list(cell_in_direction(cell, "Right")),] 
-            
-            
-            #add cell to explored
-            explored += [cell,]
-            
-        #all possible paths from the worker cell have been explored without reaching the destination, so return false
-        return False
+    def restart_level(self):
+        if self.level_file_name: 
+            self.start_level()
+ 
+    def fresh_display(self):
+        '''
+        First display of the warehouse
+        Setup the self.cells dictionary
+        '''
+        for x,y in self.warehouse.walls:
+            w = tk.Label(self.frame, image=self.image_dict['wall'])
+            w.grid(row=y,column=x)
+            self.cells[(x,y)] = w
+        for x,y in self.warehouse.targets:
+            w = tk.Label(self.frame, image=self.image_dict['target'])
+            w.grid(row=y,column=x)
+            self.cells[(x,y)] = w
+        for x,y in self.warehouse.boxes:
+            if (x,y) in self.warehouse.targets:
+                w = self.cells[(x,y)]
+                w['image'] = self.image_dict['box_on_target']
+            else:
+                w = tk.Label(self.frame, image=self.image_dict['box'])
+                w.grid(row=y,column=x)
+            self.cells[(x,y)] = w
+        x,y = self.warehouse.worker
+        if (x,y) in self.warehouse.targets:
+            w = self.cells[(x,y)]
+            w['image'] = self.image_dict['worker_on_target']
+        else:
+            w = tk.Label(self.frame, image=self.image_dict['worker'])
+            w.grid(row=y,column=x)
+            self.cells[(x,y)] = w
+        self.pack()
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    def move_player(self, direction):
+        '''
+        direction in ['Left', 'Right', 'Up', 'Down']:
+        Check whether the worker is pushing a box
+        '''
+        x,y = self.warehouse.worker
+##        print 'worker x,y = ',x,y
+        xy_offset = self.direction_offset[direction]
+##        print 'xy_offset = ', xy_offset
+        next_x , next_y = x+xy_offset[0] , y+xy_offset[1] # where the player will go if possible
+##        print 'next_x , next_y = ', next_x , next_y
+        # Let's find out if it is possible to move the player in this direction
+        if (next_x,next_y) in self.warehouse.walls:
+            return # impossible move
+        if (next_x,next_y) in self.warehouse.boxes:
+            if self.try_move_box( (next_x,next_y), (next_x+xy_offset[0],next_y+xy_offset[1]) ) == False:
+                return # box next to the player could not be pushed
+        # now, the cell next to the player must be empty
+        # we still have to move the player
+##        print 'let s move the player! '
+        w = self.cells[(x,y)] # Label widget in the cell currently containing the player
+        del self.cells[(x,y)]
+        w.destroy()
+        w = tk.Label(self.frame) #, image=self.image_dict['worker'])
+        w.grid(row=next_y,column=next_x) # move it to the next cell
+        self.cells[(next_x,next_y)] = w
+        self.warehouse.worker = (next_x,next_y)
+        # Test whether the appearance of the player need to change on the next cell
+        if (next_x,next_y) in self.warehouse.targets:
+            w['image'] = self.image_dict['worker_on_target']
+        else:
+            w['image'] = self.image_dict['worker']
+        # update the cell where the player was
+        if(x,y) in self.warehouse.targets:
+            w = tk.Label(self.frame, image=self.image_dict['target'])
+            w.grid(row=y,column=x)
+            self.cells[(x,y)] = w      
+        puzzle_solved = all(z in self.warehouse.targets for z in self.warehouse.boxes)
+        if puzzle_solved:
+            x,y = self.warehouse.worker
+            w = self.cells[(x,y)] # Label widget in the cell currently containing the player
+            del self.cells[(x,y)]
+            w.destroy()
+            w = tk.Label(self.frame, image=self.image_dict['smiley'])
+            w.grid(row=y,column=x)
+            self.cells[(x,y)] = w
+        self.pack()
+          
 
-def solve_sokoban_macro(warehouse):
-    '''
-    Solve using macro actions the puzzle defined in the warehouse passed as
-    a parameter. A sequence of macro actions should be
-    represented by a list M of the form
-            [ ((r1,c1), a1), ((r2,c2), a2), ..., ((rn,cn), an) ]
-    For example M = [ ((3,4),'Left') , ((5,2),'Up'), ((12,4),'Down') ]
-    means that the worker first goes the box at row 3 and column 4 and pushes it left,
-    then goes the box at row 5 and column 2 and pushes it up, and finally
-    goes the box at row 12 and column 4 and pushes it down.
+    def try_move_box(self, location, next_location):
+        '''
+        location and next_location are (x,y) tuples
+        Move the box  from 'location' to 'next_location'
+        Note that we assume that there is a wall around the warehouse!
+        Return True if the box was moved, return False if the box could not be moved
+        Update the position and the image of the Label widget for this box
+        '''
+        x, y = location
+        next_x, next_y = next_location
 
-    @param warehouse: a valid Warehouse object
+        assert (x,y) in self.warehouse.boxes
+        if (next_x, next_y) not in self.warehouse.walls and (next_x, next_y) not in self.warehouse.boxes:
+            # can move the box!
+            # clean cell (x,y)
+            w = self.cells[(x,y)]
+            del self.cells[(x,y)]
+            w.destroy()
+            # clean cell (next_x,next_y)
+            if (next_x,next_y) in self.cells:
+                assert (next_x,next_y) in self.warehouse.targets
+                w = self.cells[(next_x,next_y)]
+                del self.cells[(next_x,next_y)]
+                w.destroy()
+            # new Label for the moved box
+            w = tk.Label(self.frame)
+            if (next_x,next_y) in self.warehouse.targets:
+                w['image'] = self.image_dict['box_on_target']
+            else:
+                w['image'] = self.image_dict['box']
+            w.grid(row=next_y, column=next_x)
+            self.cells[(next_x,next_y)] = w
+            self.warehouse.boxes.remove((x,y))
+            self.warehouse.boxes.append((next_x,next_y))
+            # we don't have to update (x,y), this will be done while moving the player
+            return True # move successful
+        else:
+            return False # box was blocked
 
-    @return
-        If puzzle cannot be solved return ['Impossible']
-        Otherwise return M a sequence of macro actions that solves the puzzle.
-        If the puzzle is already in a goal state, simply return []
-    '''
-    # skp = SokobanPuzzle(warehouse)
-    # string_directions = solve_sokoban_elem(warehouse)
-    
-    # macro_directions = []
-    # worker_position = warehouse.worker
-    
-    # for direction in string_directions:
-        # if cell_in_direction(worker_position, direction) in skp.
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+if __name__ == "__main__":
+    app = Application()
+    app.bind_all("<Key>", app.key)
+    app.mainloop()
+
+# + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + 
+#                              CODE CEMETARY
+# + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + 
