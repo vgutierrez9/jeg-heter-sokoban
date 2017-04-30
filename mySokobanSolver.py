@@ -102,7 +102,6 @@ def taboo_coordinates(warehouse):
     all_corner_pairs = itertools.permutations(corners, 2)
 
     #Check for floor tiles between corners, without targets, and add to taboo list
-
     #Pull each set of corner pairs
     for corner_pair in all_corner_pairs:
         #Check if those corners are in same column
@@ -121,33 +120,91 @@ def taboo_coordinates(warehouse):
                 if vertically_aligned(corner_pair[0], target) and ((target[1] > taboo_y_min) or (target[1] < taboo_y_max)):
                     target_between_corners = True
                     break
+                    
+            #if no target between corners, check for gaps in walls 
             if not target_between_corners:
-                taboo_x = corner_pair[0][0]
-                #Check if each floor cell is in same column and between corners
-                taboo += [(x,y) for x,y in floor_next_to_wall if x == taboo_x and ((y > taboo_y_min) and (y < taboo_y_max))]
+            
+                corner_x = corner_pair[0][0]
+                corner1 = corner_pair[0]
+                corner2 = corner_pair[1]
+                
+                #Will be marked true if corner (1/2) has wall on that side (R/L)
+                corner1L = False
+                corner1R = False
+                corner2L = False
+                corner2R = False
+                
+                #check for walls on sides of corners
+                if cell_in_direction(corner1, "Left") in warehouse.walls:
+                    corner1L = True
+                if cell_in_direction(corner1, "Right") in warehouse.walls:
+                    corner1R = True
+                if cell_in_direction(corner2, "Left") in warehouse.walls:
+                    corner2L = True
+                if cell_in_direction(corner2, "Right") in warehouse.walls:
+                    corner2R = True    
+                
+                #if wall on L, check wall on L for a gap
+                if corner1L and corner2L:
+                    gap = [(x,y) for x,y in floor if x == corner1[0]-1 and ((y > taboo_y_min) and (y < taboo_y_max))]
+                #if wall on R, check wall on R for a gap
+                if corner1R and corner2R:
+                    gap = [(x,y) for x,y in floor if x == corner1[0]+1 and ((y > taboo_y_min) and (y < taboo_y_max))]
+                
+                #if no gap in wall(s)   
+                if gap == []:
+                    #add each floor cell between corners to taboo
+                    taboo += [(x,y) for x,y in floor if x == corner_x and ((y > taboo_y_min) and (y < taboo_y_max))]
 
 
         elif horizontally_aligned(corner_pair[0], corner_pair[1]):
-            #Check if those corners are in same row
-            if horizontally_aligned(corner_pair[0], corner_pair[1]):
-                #Find which are the min and max x values
-                if corner_pair[0][0] < corner_pair[1][0]:
-                    taboo_x_min = corner_pair[0][0]
-                    taboo_x_max = corner_pair[1][0]
-                else:
-                    taboo_x_min = corner_pair[1][0]
-                    taboo_x_max = corner_pair[0][0]
+            #Find which are the min and max x values
+            if corner_pair[0][0] < corner_pair[1][0]:
+                taboo_x_min = corner_pair[0][0]
+                taboo_x_max = corner_pair[1][0]
+            else:
+                taboo_x_min = corner_pair[1][0]
+                taboo_x_max = corner_pair[0][0]
 
-                    target_between_corners = False
-                    #Check if any targets are between the corners
-                    for target in warehouse.targets:
-                        if horizontally_aligned(corner_pair[0], target) and ((target[0] > taboo_x_min) or (target[0] < taboo_x_max)):
-                            target_between_corners = True
-                            break
-                    if not target_between_corners:
-                        taboo_y = corner_pair[0][1]
-                        #Check if each floor cell is in same column and between corners and add to taboo list
-                        taboo += [(x,y) for x,y in floor_next_to_wall if y == taboo_y and ((x > taboo_x_min) and (x < taboo_x_max))]
+                target_between_corners = False
+                #Check if any targets are between the corners
+                for target in warehouse.targets:
+                    if horizontally_aligned(corner_pair[0], target) and ((target[0] > taboo_x_min) or (target[0] < taboo_x_max)):
+                        target_between_corners = True
+                        break
+                if not target_between_corners:
+                    corner_y = corner_pair[0][1]
+                    
+                    corner1 = corner_pair[0]
+                    corner2 = corner_pair[1]
+                    
+                    #Will be marked true if corner (1/2) has wall on that side (Up/Down)
+                    corner1U = False
+                    corner1D = False
+                    corner2U = False
+                    corner2D = False
+                    
+                    #check for walls on sides of corners
+                    if cell_in_direction(corner1, "Up") in warehouse.walls:
+                        corner1U = True
+                    if cell_in_direction(corner1, "Down") in warehouse.walls:
+                        corner1D = True
+                    if cell_in_direction(corner2, "Up") in warehouse.walls:
+                        corner2U = True
+                    if cell_in_direction(corner2, "Down") in warehouse.walls:
+                        corner2D = True    
+                    
+                    #if wall above, check wall above for a gap
+                    if corner1U and corner2U:
+                        gap = [(x,y) for x,y in floor if y == corner1[1]-1 and ((x > taboo_x_min) and (x < taboo_x_max))]
+                    #if wall below, check wall below for a gap
+                    if corner1D and corner2D:
+                        gap = [(x,y) for x,y in floor if y == corner1[1]+1 and ((x > taboo_x_min) and (x < taboo_x_max))]
+                    
+                    #if no gap in wall(s)   
+                    if gap == []:
+                        #add each floor cell between corners to taboo
+                        taboo += [(x,y) for x,y in floor if y == corner_y and ((x > taboo_x_min) and (x < taboo_x_max))]
     
     return taboo
 
@@ -439,6 +496,7 @@ class SokobanPuzzle(search.Problem):
         
         if num_box_on_target == len(self.wh.targets):
             print("GOAL")
+            print (taboo_coordinates(self.wh))
             return True
         else:
            print("fail")
@@ -501,7 +559,7 @@ class SokobanPuzzle(search.Problem):
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 #DONE
-def check_tabo_aallowed_action_seq(warehouse, action_seq):
+def check_taboo_aallowed_action_seq(warehouse, action_seq):
     '''
     Determine if the sequence of actions listed in 'action_seq' is legal or not.
 
