@@ -44,9 +44,11 @@ def taboo_cells(warehouse):
 
     coordinate_list = taboo_coordinates(warehouse)
 
+    #Map dimensions
     X,Y = zip(*warehouse.walls)
     x_size, y_size = 1+max(X), 1+max(Y)
 
+    #Turn the list of taboocells and walls into a string
     vis = [[" "] * x_size for y in range(y_size)]
     for (x,y) in warehouse.walls:
         vis[y][x] = "#"
@@ -137,6 +139,7 @@ def taboo_coordinates(warehouse):
                 if cell_in_direction(corner2, "Right") in warehouse.walls:
                     corner2R = True
 
+                #If there is a wall on left side of both walls or right side 
                 if (corner1L and corner2L) or (corner1R and corner2R):
                     # If wall on L, check wall on L for a gap
                     if corner1L and corner2L:
@@ -188,6 +191,7 @@ def taboo_coordinates(warehouse):
                     if cell_in_direction(corner2, "Down") in warehouse.walls:
                         corner2D = True
 
+                    #If there is a wall above on both corners or under on both corners
                     if (corner1U and corner2U) or (corner1D and corner2D):
                         # If wall above, check wall above for a gap
                         if corner1U and corner2U:
@@ -349,6 +353,7 @@ class SokobanPuzzle(search.Problem):
         '''
 
         self.wh = warehouse
+        #Our state
         self.initial = ((warehouse.worker),) + tuple(warehouse.boxes)
         self.targets = warehouse.targets
         self.taboo_list = taboo_coordinates(warehouse)
