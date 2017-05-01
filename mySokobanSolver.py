@@ -30,14 +30,8 @@ def my_team():
 
 def taboo_cells(warehouse):
     '''
-    Identify the taboo cells of a warehouse. A cell is called 'taboo'
-    if whenever a box get pushed on such a cell then the puzzle becomes unsolvable.
-    When determining the taboo cells, you must ignore all the existing boxes,
-    simply consider the walls and the target  cells.
-    Use only the following two rules to determine the taboo cells;
-     Rule 1: if a cell is a corner and not a target, then it is a taboo cell.
-     Rule 2: all the cells between two corners along a wall are taboo if none of
-             these cells is a target.
+    Uses the taboo_coordinates method to make a string representation
+    of the list of taboo cells taboo_coordinates return. 
 
     @param warehouse: a Warehouse object
 
@@ -214,7 +208,6 @@ def is_corner(warehouse, floor_cell):
     Checks the floor cell in the given warehouse if its a corner or not
 
     @param warehouse: a Warehouse object
-
     @param floor_cell: a floor cell
 
     @return
@@ -245,7 +238,6 @@ def manhattan_distance(cell_a, cell_b):
     Finds the manhattan distance between two given cells
 
     @param cell_a: a cell
-
     @param cell_b: a cell
 
     @return
@@ -258,7 +250,6 @@ def is_next_to_wall(warehouse, cell):
     Checks if the cell is next to a wall
 
     @param warehouse: a Warehouse object
-
     @param cell: a cell
 
     @return
@@ -296,28 +287,6 @@ def cell_in_direction(cell, direction):
         return(cell[0], cell[1] - 1)
     elif direction == "Down":
         return(cell[0], cell[1] + 1)
-
-'''
-delete?
-'''
-#don't need because search returns list of directions
-def get_direction(origin, destination):
-   if horizontally_aligned(destination, origin):
-      if origin[0] - destination[0] == 1:
-         return "Left"
-      elif origin[0] - destination[0] == -1:
-         return "Right"
-      else:
-         return "Destination cell is too far away to be reached in one left or right movement."
-   elif vertically_aligned(destination, origin):
-      if origin[1] - destination[1] == 1:
-         return "Up"
-      elif origin[1] - destination[1] == -1:
-         return "Down"
-      else:
-         return "Destination cell is too far away to be reached in one up or down movement."
-   else:
-      return "Destination cell cannot be reached in one up, down, left or right movement from origin."
 
 
 def horizontally_aligned(cell_a, cell_b):
@@ -523,9 +492,7 @@ class SokobanPuzzle(search.Problem):
 
         '''
 
-        '''
-        wat iz diz
-        '''
+        #Assert that the action is legal
         assert action in self.actions(state)
 
         new_state = ()
@@ -582,21 +549,16 @@ class SokobanPuzzle(search.Problem):
             if box in self.targets:
                 num_box_on_target += 1
 
-        '''
-        ?
-        '''
-        # If amount of boxes on target is the same as amount of boxes
+
+        # Goal is reached if amount of boxes on target is the same as amount of boxes
         if num_box_on_target == len(state)-1:
             return True
         else:
            return False
 
-    '''
-    ?
-    '''
     def h(self, node):
         '''
-        Is the heuristic estimate to the goal
+        The heuristic estimate to the goal
 
         @param self: instance of a attribute
 
@@ -607,9 +569,7 @@ class SokobanPuzzle(search.Problem):
         '''
         return self.value(node.state)
 
-    '''
-    ?
-    '''
+
     def path_cost(self, c, state1, action, state2):
         '''
         Return the cost of a solution path that arrives at state2 from
@@ -632,6 +592,10 @@ class SokobanPuzzle(search.Problem):
             The path cost for the worker getting from state1 too state2
         '''
 
+        '''
+        This is the path cost we initally used. It makes the path cost
+        the movement of the boxes
+        '''
         # Counting the path of each time the box is pushed. Used for gathering data displayed on the graphs in the report
         #Boxes as path cost
         # for i in range(1, len(state1)-1):
@@ -712,11 +676,8 @@ class SokobanPuzzle(search.Problem):
             # Add the minimal distance to value
             value += min_dist
 
-            '''
-            ?
-            '''
             # Loops until the shortest distance for each box is found.
-            # If boxA has shortest distance to targetB. Remove targetB from the list.
+            # If boxA has shortest distance to targetB. Remove targetB from the list and BoxA
             i = 0
             while i < len(box_targets_dist):
                 trio = box_targets_dist[i]
@@ -725,57 +686,29 @@ class SokobanPuzzle(search.Problem):
                     i -= 1
                 i += 1
 
+            
             '''
-            ?
+            This part was implemented to make a better value for our heuristic
+            but after testing it, it was determined that the search is faster 
+            without it
             '''
             # Finds the box closest to the worker, when found add that distance to value
-            min_worker_dist = math.sqrt((boxes[0][0] - state[0][0])**2 + (boxes[0][1] - state[0][1])**2)
-            for box in boxes:
-                # Separate the box's x, y coordinates
-                box_x = box[0]
-                box_y = box[1]
+            # min_worker_dist = math.sqrt((boxes[0][0] - state[0][0])**2 + (boxes[0][1] - state[0][1])**2)
+            # for box in boxes:
+            #     # Separate the box's x, y coordinates
+            #     box_x = box[0]
+            #     box_y = box[1]
 
-                temp_dist = math.sqrt((box_x - state[0][0])**2 + (box_y - state[0][1])**2)
-                if temp_dist < min_worker_dist:
-                    min_worker_dist = temp_dist
+            #     temp_dist = math.sqrt((box_x - state[0][0])**2 + (box_y - state[0][1])**2)
+            #     if temp_dist < min_worker_dist:
+            #         min_worker_dist = temp_dist
 
-            value += min_worker_dist
+            # value += min_worker_dist
 
         return value
 
-
-        '''
-        ?
-        '''
-        # #get each box, one at a time
-        # for box in boxes:
-            # #separate the box's x, y coordinates
-            # box_x = box[0]
-            # box_y = box[1]
-            # #get each target one at a time and find the distance to the target that is closest to the box
-            # for target in target_list:
-                # #separate the target's x,y coordinates
-                # target_x = target[0]
-                # target_y = target[1]
-                # #find the diagonal distance (via hypotenus)
-                # dist = math.sqrt((box_x - target_x)**2 + (box_y - target_y)**2)
-                # #if first target, save that distance as minimum distance
-                # if first:
-                    # min_dist = dist
-                    # first = False
-                # #Save distance as minimum distance if it is less than the existing minimum distance
-                # elif dist < min_dist:
-                    # min_dist = dist
-                    # target_list.remove(target)
-            # #add the minimum distance for each box to value
-            # value += min_dist
-
-        # return value
-
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-'''
-?
-'''
+
 def check_taboo_allowed_action_seq(warehouse, action_seq):
     '''
     Determine if the sequence of actions listed in 'action_seq' is legal or not.
@@ -810,7 +743,8 @@ def check_taboo_allowed_action_seq(warehouse, action_seq):
             temp_state = skp.result(temp_state, direction)
         else:
             return "Failure"
-
+    
+    #Updates the worker and boxes position 
     skp.wh.worker = temp_state[0]
     skp.wh.boxes = temp_state[1:]
 
@@ -846,15 +780,14 @@ def check_action_seq(warehouse, action_seq):
         else:
             return "Failure"
 
+    #Updates the worker and box position 
     skp.wh.worker = temp_state[0]
     skp.wh.boxes = temp_state[1:]
 
     return skp.wh.__str__()
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-'''
-?
-'''
+
 def solve_sokoban_elem(warehouse):
     '''
     Solves the puzzle using elementary actions, by using the A* graph search.
@@ -871,14 +804,10 @@ def solve_sokoban_elem(warehouse):
             the given puzzle coded with 'Left', 'Right', 'Up', 'Down'
             For example, ['Left', 'Down', Down','Right', 'Up', 'Down']
             If the puzzle is already in a goal state, simply return []
-
     '''
     skp = SokobanPuzzle(warehouse)
     path = search.astar_graph_search(skp)
 
-    '''
-    ? impossible?
-    '''
     if not path:
         return ['Impossible']
     # Turn list of coordinates into list of strings
@@ -968,7 +897,8 @@ def solve_sokoban_macro(warehouse):
     # Check if puzzle already is in a goal state
     if skp.goal_test(skp.initial):
         return []
-
+    
+    #Saves the list of strings of elementary actions solve_sokoban_elem returns
     string_directions = solve_sokoban_elem(warehouse)
 
     # Check if puzzle connot be solved
