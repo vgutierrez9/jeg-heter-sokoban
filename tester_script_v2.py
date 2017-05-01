@@ -27,8 +27,7 @@ from sokoban import Warehouse
 
 from mySokobanSolver import my_team, taboo_cells, SokobanPuzzle, check_action_seq
 from mySokobanSolver import solve_sokoban_elem, can_go_there, solve_sokoban_macro 
-
-
+import time
 
 
 puzzle_t1 ='''
@@ -132,21 +131,24 @@ def test_check_elem_action_seq():
         
 
 def test_solve_sokoban_elem():
-    problem_file = "./warehouses/warehouse_75.txt"
+    problem_file = "./warehouses/warehouse_77.txt"
     wh = Warehouse()
     wh.read_warehouse_file(problem_file)
     #wh.extract_locations(puzzle_t2.split(sep='\n'))
-    print(wh)
+    # print(wh)
     #rint(wh.walls)
     print('\nElementary solution')
+    start = time.time()
     answer = solve_sokoban_elem(wh)
-    print("STOP")
+    end = time.time()
+    print(end - start)
+    # print("STOP")
     
-    print(answer)
-    if  answer ==  ['Right', 'Right']:
-        print('Test solve_sokoban_elem passed\n')
-    else:
-        print('** Test solve_sokoban_elem failed\n')
+    # print(answer)
+    # if  answer ==  ['Right', 'Right']:
+    #     print('Test solve_sokoban_elem passed\n')
+    # else:
+    #     print('** Test solve_sokoban_elem failed\n')
         
 
 def test_can_go_there():
@@ -164,7 +166,7 @@ def test_can_go_there():
     print("TEST 2 PASSED")
   
 def test_solve_sokoban_macro():
-    problem_file = "./warehouses/warehouse_73.txt"
+    problem_file = "./warehouses/warehouse_75.txt"
     wh = Warehouse()
     wh.read_warehouse_file(problem_file)
     print(wh)
@@ -197,8 +199,8 @@ if __name__ == "__main__":
 #    print(my_team())  # should print your team
 
 #    test_check_elem_action_seq()
-#    test_solve_sokoban_elem()
+    test_solve_sokoban_elem()
 #    test_taboo_cells() 
 #   test_can_go_there()
-    test_solve_sokoban_macro()   
+#    test_solve_sokoban_macro()   
 #    test_check_macro_action_seq()

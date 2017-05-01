@@ -332,7 +332,7 @@ class SokobanPuzzle(search.Problem):
     def __init__(self, warehouse):
 
         self.wh = warehouse
-        self.initial = ((warehouse.worker),) + tuple(warehouse.boxes)
+        self.initial = ((warehouse.worker),) + tuple(warehouse.boxes) 
         self.targets = warehouse.targets
         self.taboo_list = taboo_coordinates(warehouse)
         
@@ -467,7 +467,6 @@ class SokobanPuzzle(search.Problem):
                 #if we find the box that builder is moving to
                 if cell_in_direction(state[0], action) == box:
                     new_state_list = list(new_state)
-                    
                     #move the box one space in the direction
                     new_state_list[i] = cell_in_direction(box, action)
                     
@@ -488,7 +487,7 @@ class SokobanPuzzle(search.Problem):
 
         new_state = (new_state[0],) + tuple(sorted(new_state[1:]))
 
-        print(new_state)
+        # print(new_state)
         
         
         return new_state
@@ -504,8 +503,8 @@ class SokobanPuzzle(search.Problem):
             if box in self.targets:
                 num_box_on_target += 1
         
-        print("Num box on target")
-        print(num_box_on_target)
+        # print("Num box on target")
+        # print(num_box_on_target)
         
         if num_box_on_target == len(state)-1:
             print("GOAL")
@@ -523,10 +522,14 @@ class SokobanPuzzle(search.Problem):
         is such that the path doesn't matter, this function will only look at
         state2.  If the path does matter, it will consider c and maybe state1
         and action. The default method costs 1 for every step in the path."""
+        #Boxes as path cost
         for i in range(1, len(state1)-1):
             if state1[i][0] != state2[i][0] or state1[i][1] != state2[i][1]:
                 return c + 1
         return c
+
+        #Worker as path cost
+        # return c + manhattan_distance(state1[0], state2[0])
 
     #DONE ?
     def value(self, state):
@@ -739,7 +742,8 @@ def solve_sokoban_elem(warehouse):
     #turn list of coordinates into list of strings
     else:
         print("Solution")
-        print(path.solution())
+        # print(path.solution())
+        print(len(path.solution()))
         return path.solution()
     
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -837,6 +841,7 @@ def solve_sokoban_macro(warehouse):
     #go through each elementary action and look for actions that move boxes, add those actions to macro list
     for direction in string_directions:
         print(direction)
+        #check if the move from the elem string is going to move a builder to a box
         if cell_in_direction(temp_state[0], direction) in temp_state[1:]:
             macro_move = tuple(list((cell_in_direction(temp_state[0], direction),) + (direction,)))
             macro_directions += [macro_move,]
