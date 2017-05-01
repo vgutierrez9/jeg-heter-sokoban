@@ -651,10 +651,6 @@ class SokobanPuzzle(search.Problem):
 
                 # Find the diagonal distance (via hypotenus)
                 dist = math.sqrt((box_x - target_x)**2 + (box_y - target_y)**2)
-                '''
-                ?
-                '''
-                #dist = manhattan_distance(box, target)
 
                 temp_list += box
                 temp_list += target
